@@ -1,11 +1,11 @@
 #include "rmf-entity.h"
 
-#include <glib-object.h>
-
 #include "rmf-entitydata.h"
 #include "rmf-loader.h"
 #include "rmf-mapobject.h"
 #include "rmf-private.h"
+
+#include <glib-object.h>
 
 struct _RmfEntity {
     RmfEntityData parent_instance;
@@ -14,7 +14,7 @@ struct _RmfEntity {
 
 enum Property {
     PROP_ORIGIN = 1,
-    N_PROPERTIES
+    N_PROPERTIES,
 };
 
 static GParamSpec *obj_properties[N_PROPERTIES] = {nullptr};
@@ -26,15 +26,16 @@ G_DEFINE_FINAL_TYPE(RmfEntity, rmf_entity, RMF_TYPE_ENTITY_DATA)
 static void rmf_entity_constructed(GObject *object)
 {
     auto const self = RMF_ENTITY(object);
-    g_autoptr(RmfLoader) loader =
-        rmf_map_object_get_loader(RMF_MAP_OBJECT(self));
+    g_autoptr(RmfLoader) loader
+        = rmf_map_object_get_loader(RMF_MAP_OBJECT(self));
 
     rmf_loader_log(loader, "Entity");
     G_OBJECT_CLASS(rmf_entity_parent_class)->constructed(object);
 
     g_assert(
         rmf_map_object_get_object_type(RMF_MAP_OBJECT(self))
-        == RMF_OBJECT_TYPE_ENTITY);
+        == RMF_OBJECT_TYPE_ENTITY
+    );
 
     rmf_loader_seek(loader, 2);
     rmf_read_vector(loader, &self->origin);
@@ -45,7 +46,8 @@ static void rmf_entity_get_property(
     GObject *object,
     guint property_id,
     GValue *value,
-    GParamSpec *pspec)
+    GParamSpec *pspec
+)
 {
     auto const self = RMF_ENTITY(object);
     switch ((enum Property)property_id) {
@@ -66,8 +68,13 @@ static void rmf_entity_class_init(RmfEntityClass *klass)
     oclass->constructed = rmf_entity_constructed;
     oclass->get_property = rmf_entity_get_property;
 
-    obj_properties[PROP_ORIGIN] =
-        g_param_spec_pointer("origin", "Origin", "Origin.", G_PARAM_READABLE);
+    /**
+     * RmfEntity:origin: (attributes org.gtk.Property.get=rmf_entity_get_origin)
+     *
+     * blah
+     */
+    obj_properties[PROP_ORIGIN]
+        = g_param_spec_pointer("origin", "Origin", "Origin.", G_PARAM_READABLE);
 
     g_object_class_install_properties(oclass, N_PROPERTIES, obj_properties);
 }
@@ -78,6 +85,12 @@ static void rmf_entity_init(RmfEntity *)
 
 // Public //////////////////////////////////////////////////////////////////////
 
+/**
+ * rmf_entity_get_origin: (attributes org.gtk.Method.get_property=origin)
+ * @self: an entity
+ *
+ * Blah.
+ */
 rmf_vector const *rmf_entity_get_origin(RmfEntity *self)
 {
     rmf_vector const *value = 0;

@@ -1,6 +1,10 @@
 #ifndef RMF_TYPES_H
 #define RMF_TYPES_H
 
+#if !defined(__RMF_H_INSIDE__) && !defined(RMF_COMPILATION)
+#  error "Only <rmf.h> can be included directly."
+#endif
+
 #include <stddef.h>
 #include <stdint.h>
 

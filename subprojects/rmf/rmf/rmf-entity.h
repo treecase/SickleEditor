@@ -1,6 +1,10 @@
 #ifndef RMF_ENTITY_H
 #define RMF_ENTITY_H
 
+#if !defined(__RMF_H_INSIDE__) && !defined(RMF_COMPILATION)
+#  error "Only <rmf.h> can be included directly."
+#endif
+
 #include "rmf/rmf-entitydata.h"
 #include "rmf/rmf-types.h"
 

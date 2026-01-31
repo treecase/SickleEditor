@@ -1,6 +1,10 @@
 #ifndef RMF_WORLDSPAWN_H
 #define RMF_WORLDSPAWN_H
 
+#if !defined(__RMF_H_INSIDE__) && !defined(RMF_COMPILATION)
+#  error "Only <rmf.h> can be included directly."
+#endif
+
 #include "rmf/rmf-entitydata.h"
 #include "rmf/rmf-iterator.h"
 #include "rmf/rmf-types.h"

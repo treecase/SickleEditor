@@ -1,6 +1,10 @@
 #ifndef RMF_SOLID_H
 #define RMF_SOLID_H
 
+#if !defined(__RMF_H_INSIDE__) && !defined(RMF_COMPILATION)
+#  error "Only <rmf.h> can be included directly."
+#endif
+
 #include "rmf/rmf-iterator.h"
 #include "rmf/rmf-mapobject.h"
 #include "rmf/rmf-types.h"

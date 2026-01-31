@@ -1,6 +1,10 @@
 #ifndef RMF_GROUP_H
 #define RMF_GROUP_H
 
+#if !defined(__RMF_H_INSIDE__) && !defined(RMF_COMPILATION)
+#  error "Only <rmf.h> can be included directly."
+#endif
+
 #include "rmf/rmf-mapobject.h"
 
 #include <glib-object.h>

@@ -1,6 +1,10 @@
 #ifndef RMF_ITERATOR_H
 #define RMF_ITERATOR_H
 
+#if !defined(__RMF_H_INSIDE__) && !defined(RMF_COMPILATION)
+#  error "Only <rmf.h> can be included directly."
+#endif
+
 #include "rmf/rmf-loader.h"
 
 #include <glib-object.h>
@@ -20,6 +24,7 @@ RmfIterator *rmf_iterator_new(
 );
 
 /**
+ * rmf_iterator_next:
  * Returns null on error or if the iterator is exhausted.
  */
 [[nodiscard]]

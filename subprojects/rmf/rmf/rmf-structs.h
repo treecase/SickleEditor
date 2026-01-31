@@ -1,6 +1,10 @@
 #ifndef RMF_STRUCTS_H
 #define RMF_STRUCTS_H
 
+#if !defined(__RMF_H_INSIDE__) && !defined(RMF_COMPILATION)
+#  error "Only <rmf.h> can be included directly."
+#endif
+
 #include "rmf/rmf-types.h"
 
 #include <glib-object.h>
