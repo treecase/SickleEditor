@@ -1,5 +1,0 @@
-add_subdirectory(gresource)
-add_subdirectory(share)
-if(WIN32)
-    add_subdirectory(windows)
-endif()

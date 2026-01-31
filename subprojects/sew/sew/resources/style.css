@@ -1,0 +1,16 @@
+/** SewPreferencesRow *************************************/
+
+row label.path {
+    font-weight: bold;
+}
+
+
+/** SewViewport2d *****************************************/
+
+#views viewport2d {
+    background: @theme_base_color;
+}
+
+#views viewport2d .grid {
+    color: @borders;
+}

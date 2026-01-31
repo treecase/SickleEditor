@@ -1,0 +1,56 @@
+/* GTK NAMED COLORS ---------------- use responsibly!
+ * theme_fg_color                     widget text/foreground color
+ * theme_text_color                   text color for entries, views and content in general
+ * theme_bg_color                     widget base background color
+ * theme_base_color                   text widgets and the like base background color
+ * theme_selected_bg_color            base background color of selections
+ * theme_selected_fg_color            text/foreground color of selections
+ * insensitive_bg_color               base background color of insensitive widgets
+ * insensitive_fg_color               text foreground color of insensitive widgets
+ * insensitive_base_color             insensitive text widgets and the like base background color
+ * theme_unfocused_fg_color           widget text/foreground color on backdrop windows
+ * theme_unfocused_text_color         text color for entries, views and content in general on backdrop windows
+ * theme_unfocused_bg_color           widget base background color on backdrop windows
+ * theme_unfocused_base_color         text widgets and the like base background color on backdrop windows
+ * theme_unfocused_selected_bg_color  base background color of selections on backdrop windows
+ * theme_unfocused_selected_fg_color  text/foreground color of selections on backdrop windows
+ * unfocused_insensitive_color        insensitive color on backdrop windows
+ * borders                            widgets main borders color
+ * unfocused_borders                  widgets main borders color on backdrop windows
+ * warning_color                      these are pretty self explicative
+ * error_color                        "
+ * success_color                      "
+ * content_view_bg                    content view background such as thumbnails view in Photos or Boxes
+ * text_view_bg                       Very contrasty background for text views (@theme_text_color foreground)
+ */
+
+/** General Styling ***************************************/
+label.title {
+    font-weight: bold;
+}
+
+/** Main Window *******************************************/
+#sicklewindow {
+    background-color: @theme_bg_color;
+}
+
+/* Map tools sidebar */
+#maptools {}
+
+/* Map views */
+#views {
+    border-left: 1px solid @borders;
+    border-right: 1px solid @borders;
+}
+
+/* Outliner sidebar */
+#outliner {}
+
+/** Preferences Window ************************************/
+#preferences>box {
+    padding: 12px;
+}
+
+#preferences>box>list {
+    margin: 6px;
+}

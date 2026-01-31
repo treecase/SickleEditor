@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<interface>
+  <requires lib="gtk" version="4.0"/>
+  <template class="SewPreferencesRow" parent="GtkListBoxRow">
+    <signal handler="on_activated" name="activate" swapped="yes"/>
+    <child>
+      <object class="GtkBox" id="header">
+        <style>
+          <class name="header"/>
+        </style>
+        <child>
+          <object class="GtkBox" id="title_box">
+            <style>
+              <class name="title"/>
+            </style>
+            <property name="orientation">vertical</property>
+            <child>
+              <object class="GtkLabel" id="title">
+                <style>
+                  <class name="title"/>
+                </style>
+                <property name="halign">start</property>
+                <property name="hexpand">yes</property>
+                <property bind-flags="sync-create" bind-property="title" bind-source="SewPreferencesRow" name="label"/>
+              </object>
+            </child>
+            <child>
+              <object class="GtkLabel" id="subtitle">
+                <style>
+                  <class name="subtitle"/>
+                </style>
+                <property name="halign">start</property>
+                <property name="hexpand">yes</property>
+                <property bind-flags="sync-create" bind-property="subtitle" bind-source="SewPreferencesRow" name="label"/>
+              </object>
+            </child>
+          </object>
+        </child>
+        <!-- Reset and Open buttons -->
+        <child>
+          <object class="GtkBox" id="suffixes">
+            <style>
+              <class name="suffixes"/>
+            </style>
+            <!-- Undo button -->
+            <child>
+              <object class="GtkButton" id="btn_reset">
+                <style>
+                  <class name="flat"/>
+                  <class name="undo"/>
+                </style>
+                <property name="icon-name">edit-undo-symbolic</property>
+                <binding name="visible">
+                  <closure function="is_file_nondefault" type="gboolean">
+                    <lookup name="file">SewPreferencesRow</lookup>
+                  </closure>
+                </binding>
+                <signal handler="on_reset_clicked" name="clicked" swapped="yes"/>
+              </object>
+            </child>
+            <!-- Open button -->
+            <child>
+              <object class="GtkButton" id="openButton">
+                <signal handler="on_activated" name="clicked" swapped="yes"/>
+                <child>
+                  <object class="GtkBox">
+                    <property name="spacing">6</property>
+                    <child>
+                      <object class="GtkImage">
+                        <property name="icon-name">document-open-symbolic</property>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="GtkLabel" id="pathLabel">
+                        <property name="css-classes">path</property>
+                        <binding name="label">
+                          <closure function="make_path_displayable" type="gchararray">
+                            <lookup name="file">SewPreferencesRow</lookup>
+                          </closure>
+                        </binding>
+                      </object>
+                    </child>
+                  </object>
+                </child>
+              </object>
+            </child>
+          </object>
+        </child>
+      </object>
+    </child>
+  </template>
+</interface>

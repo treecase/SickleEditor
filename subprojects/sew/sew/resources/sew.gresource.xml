@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<gresources>
+  <gresource prefix="/com/github/treecase/sew">
+    <file>style.css</file>
+    <!-- UI files -->
+    <file preprocess="xml-stripblanks">ui/sew-preferencesrow.ui</file>
+    <file preprocess="xml-stripblanks">ui/sew-viewport2d.ui</file>
+  </gresource>
+</gresources>

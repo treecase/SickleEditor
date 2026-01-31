@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schemalist>
+  <schema path="/com/github/treecase/SickleEditor/" id="com.github.treecase.SickleEditor" gettext-domain="sickle">
+
+    <key name="fgd-path" type="s">
+      <default>""</default>
+      <summary>Game .fgd path</summary>
+      <description>Path to the game's .fgd file</description>
+    </key>
+
+    <key name="game-root-path" type="s">
+      <default>""</default>
+      <summary>Base path for game data</summary>
+      <description>Base path for editor to load game data from.</description>
+    </key>
+
+    <key name="sprite-root-path" type="s">
+      <default>""</default>
+      <summary>Base path for editor sprites</summary>
+      <description>Base path for editor to load icon sprites from.</description>
+    </key>
+
+    <key name="wad-paths" type="as">
+      <default>[]</default>
+      <summary>Texture .WAD file paths</summary>
+      <description>List of paths to texture .WADs</description>
+    </key>
+
+  </schema>
+</schemalist>

@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<gresources>
+  <gresource prefix="/com/github/treecase/SickleEditor">
+    <file preprocess="xml-stripblanks">gtk/menus.ui</file>
+    <!-- UI files -->
+    <file preprocess="xml-stripblanks">ui/sickle-about.ui</file>
+    <file preprocess="xml-stripblanks">ui/sickle-applicationwindow.ui</file>
+    <file preprocess="xml-stripblanks">ui/sickle-preferenceswindow.ui</file>
+    <!-- <file preprocess="xml-stripblanks">ui/OperationSearch.glade</file> -->
+    <!-- <file preprocess="xml-stripblanks">ui/TextureSelector.glade</file> -->
+    <!-- Images -->
+    <!-- <file>logo.png</file> -->
+    <!-- <file preprocess="xml-stripblanks">logo.svg</file> -->
+    <!-- Icons -->
+    <file preprocess="xml-stripblanks">icons/scalable/apps/com.github.treecase.SickleEditor.svg</file>
+    <!-- <file>icons/16x16/outliner/brush.png</file> -->
+    <!-- <file>icons/16x16/outliner/entity.png</file> -->
+    <!-- <file>icons/16x16/outliner/face.png</file> -->
+    <!-- CSS -->
+    <file>style.css</file>
+    <!-- <file>LuaConsole.css</file> -->
+    <!-- <file>MapArea2D.css</file> -->
+    <!-- GLSL shaders -->
+    <!-- <file>shaders/billboard.vert</file> -->
+    <!-- <file>shaders/map.frag</file> -->
+    <!-- <file>shaders/map.vert</file> -->
+    <!-- <file>shaders/PointEntityBox.frag</file> -->
+    <!-- <file>shaders/transparent.frag</file> -->
+    <!-- Lua scripts -->
+    <!-- <file>lua/gdkevents.lua</file> -->
+    <!-- <file>lua/gdkkeysyms.lua</file> -->
+    <!-- <file>lua/gdktypes.lua</file> -->
+  </gresource>
+</gresources>

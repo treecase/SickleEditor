@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<interface>
+  <requires lib="gtk" version="4.0"/>
+  <object class="GtkAboutDialog" id="about">
+    <property name="program-name">Sickle Editor</property>
+    <property name="copyright"><![CDATA[Copyright © 2022-2026
+Treecase]]></property>
+    <property name="website">https://github.com/treecase/SickleEditor</property>
+    <property name="website-label">Github</property>
+    <property name="logo-icon-name">com.github.treecase.SickleEditor</property>
+    <property name="license-type">GTK_LICENSE_GPL_3_0</property>
+    <property name="title">About Sickle Editor</property>
+  </object>
+</interface>

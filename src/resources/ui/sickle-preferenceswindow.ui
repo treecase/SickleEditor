@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<interface>
+  <requires lib="gtk" version="4.0"/>
+  <template class="SicklePreferencesWindow" parent="GtkWindow">
+    <property name="title">Preferences</property>
+    <property name="width-request">440</property>
+    <property name="height-request">380</property>
+    <property name="resizable">no</property>
+    <property name="modal">yes</property>
+    <property name="name">preferences</property>
+    <!-- Keybinds -->
+    <child>
+      <object class="GtkShortcutController">
+        <child>
+          <object class="GtkShortcut">
+            <property name="trigger">Escape</property>
+            <property name="action">action(window.close)</property>
+          </object>
+        </child>
+      </object>
+    </child>
+    <!-- Content -->
+    <child>
+      <object class="GtkBox">
+        <property name="orientation">vertical</property>
+        <property name="spacing">6</property>
+        <!-- Title -->
+        <child>
+          <object class="GtkLabel">
+            <style>
+              <class name="title"/>
+            </style>
+            <property name="halign">start</property>
+            <property name="label">Preferences</property>
+          </object>
+        </child>
+        <!-- Description -->
+        <child>
+          <object class="GtkLabel">
+            <style>
+              <class name="dim-label"/>
+            </style>
+            <property name="halign">start</property>
+            <property name="label">Lorem ipsum sit dolor; blah blah blah.</property>
+          </object>
+        </child>
+        <!-- Group -->
+        <child>
+          <object class="GtkListBox">
+            <style>
+              <class name="rich-list"/>
+              <class name="boxed-list"/>
+            </style>
+            <property name="selection-mode">none</property>
+            <!-- Game Definition -->
+            <child>
+              <object class="SewPreferencesRow" id="row_game_def">
+                <property name="title">Game Definition</property>
+                <property name="subtitle">Game definition file.</property>
+                <property name="filter">
+                  <object class="GtkFileFilter">
+                    <property name="name">Forge Game Data</property>
+                    <patterns>
+                      <pattern>*.fgd</pattern>
+                    </patterns>
+                  </object>
+                </property>
+              </object>
+            </child>
+            <!-- Game Root -->
+            <child>
+              <object class="SewPreferencesRow" id="row_game_root">
+                <property name="title">Game Root</property>
+                <property name="subtitle">Root directory of the game (where hl.exe is located).</property>
+                <property name="as-folder">yes</property>
+              </object>
+            </child>
+            <!-- Sprite Root -->
+            <child>
+              <object class="SewPreferencesRow" id="row_sprite_root">
+                <property name="title">Sprite Root</property>
+                <property name="subtitle">Root directory of the game's sprites.</property>
+                <property name="as-folder">yes</property>
+              </object>
+            </child>
+            <!-- TODO: wad paths -->
+          </object>
+        </child>
+      </object>
+    </child>
+  </template>
+</interface>

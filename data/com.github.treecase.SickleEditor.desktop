@@ -1,0 +1,13 @@
+[Desktop Entry]
+Name=Sickle Editor
+Comment=Open-Source GoldSrc Editor
+Keywords=goldsrc;map;
+Exec=sickle %f
+Icon=com.github.treecase.SickleEditor
+Terminal=false
+Type=Application
+Categories=Graphics;3DGraphics
+# There aren't official MIME types for the goldsrc .map or .rmf formats, so I just made these up based on the existing vnd.valve.source.* types.
+MimeType=application/vnd.valve.goldsrc.map;application/vnd.valve.goldsrc.rmf
+# NOTE: this is the .desktop spec version, NOT the app version!
+Version=1.5

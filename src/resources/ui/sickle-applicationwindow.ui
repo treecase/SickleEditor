@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<interface>
+  <requires lib="gtk" version="4.0"/>
+  <template class="SickleApplicationWindow" parent="GtkApplicationWindow">
+    <property name="name">sicklewindow</property>
+    <property name="title">Sickle Editor</property>
+    <property name="width-request">640</property>
+    <property name="height-request">480</property>
+    <!-- Tools | Views | Outliner -->
+    <child>
+      <object class="GtkCenterBox">
+        <!-- Tools -->
+        <child type="start">
+          <object class="GtkBox" id="mapTools">
+            <property name="name">maptools</property>
+            <property name="orientation">vertical</property>
+            <property name="hexpand">yes</property>
+            <!-- MapTools are added here -->
+            <child>
+              <object class="GtkLabel">
+                <property name="label">TODO: MapTool</property>
+              </object>
+            </child>
+          </object>
+        </child>
+        <!--    Views( 3d  | front
+                       top | right ) -->
+        <child type="center">
+          <object class="GtkGrid">
+            <property name="name">views</property>
+            <property name="column-homogeneous">yes</property>
+            <property name="row-homogeneous">yes</property>
+            <property name="column-spacing">3</property>
+            <property name="row-spacing">3</property>
+            <!-- 3D view -->
+            <child>
+              <object class="GtkGLArea" id="view3D">
+                <layout>
+                  <property name="column">0</property>
+                  <property name="row">0</property>
+                </layout>
+              </object>
+            </child>
+            <!-- Front view -->
+            <child>
+              <object class="SewViewport2d" id="viewFront">
+                <layout>
+                  <property name="column">1</property>
+                  <property name="row">0</property>
+                </layout>
+              </object>
+            </child>
+            <!-- Top view -->
+            <child>
+              <object class="SewViewport2d" id="viewTop">
+                <layout>
+                  <property name="column">0</property>
+                  <property name="row">1</property>
+                </layout>
+              </object>
+            </child>
+            <!-- Right view -->
+            <child>
+              <object class="SewViewport2d" id="viewRight">
+                <layout>
+                  <property name="column">1</property>
+                  <property name="row">1</property>
+                </layout>
+              </object>
+            </child>
+          </object>
+        </child>
+        <!-- Outliner -->
+        <child type="end">
+          <object class="GtkBox" id="outliner">
+            <property name="name">outliner</property>
+            <property name="orientation">vertical</property>
+            <property name="hexpand">yes</property>
+            <child>
+              <object class="GtkLabel">
+                <property name="label">Outliner</property>
+              </object>
+            </child>
+          </object>
+        </child>
+      </object>
+    </child>
+  </template>
+</interface>

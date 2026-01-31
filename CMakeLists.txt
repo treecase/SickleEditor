@@ -58,6 +58,7 @@ find_package(PkgConfig REQUIRED)
 pkg_check_modules(glibmm REQUIRED IMPORTED_TARGET glibmm-2.4)
 pkg_check_modules(GTKMM REQUIRED IMPORTED_TARGET gtkmm-3.0)
 pkg_check_modules(sigc++ REQUIRED IMPORTED_TARGET sigc++-2.0)
+pkg_check_modules(OpenGL REQUIRED IMPORTED_TARGET opengl>=4.5)
 
 
 # --- Variables --- ##############################
@@ -74,7 +75,7 @@ set(SCHEMA_DIR "${CMAKE_CURRENT_BINARY_DIR}")
 
 # --- Target --- #################################
 add_executable(sickle)
-target_link_libraries(sickle PRIVATE ${CMAKE_DL_LIBS})
+target_link_libraries(sickle PRIVATE ${OpenGL_LIBRARIES} ${CMAKE_DL_LIBS})
 
 include(GNUInstallDirs)
 
