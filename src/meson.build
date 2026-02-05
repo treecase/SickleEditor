@@ -28,7 +28,7 @@ sickle_sources = [
 
 sickle_deps = [
   gtk_dep,
-  sew_dep,
+  libsew_dep,
   rmf_dep,
 ]
 

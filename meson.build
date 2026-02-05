@@ -23,7 +23,6 @@ gnome = import('gnome')
 # Dependencies #########################
 
 gtk_dep = dependency('gtk4', version: '>=4.10')
-sew_dep = dependency('sew', fallback: ['sew', 'libsew_dep'])
 rmf_dep = dependency('rmf', fallback: ['rmf', 'librmf_dep'])
 
 # Configuration ########################
@@ -35,7 +34,10 @@ conf.set_quoted('SE_VERSION', meson.project_version())
 
 # Build ################################
 
+sew_inc = include_directories('.')
+
 subdir('data')
+subdir('sew')
 subdir('src')
 
 # Etc. #################################
