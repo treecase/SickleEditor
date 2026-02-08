@@ -8,6 +8,7 @@
 
 struct _SickleApplicationWindow {
     GtkApplicationWindow parent_instance;
+    RmfRoot *map;
     unsigned int grid_size;
 };
 
@@ -18,7 +19,8 @@ G_DEFINE_FINAL_TYPE(
 )
 
 enum {
-    PROP_GRID_SIZE = 1,
+    PROP_MAP = 1,
+    PROP_GRID_SIZE,
     N_PROPERTIES,
 };
 
@@ -28,6 +30,8 @@ static GParamSpec *obj_properties[N_PROPERTIES];
 
 static void sickle_application_window_dispose(GObject *object)
 {
+    auto self = SICKLE_APPLICATION_WINDOW(object);
+    g_clear_object(&self->map);
     gtk_widget_dispose_template(
         GTK_WIDGET(object),
         SICKLE_TYPE_APPLICATION_WINDOW
@@ -44,6 +48,9 @@ static void sickle_application_window_get_property(
 {
     SickleApplicationWindow *self = SICKLE_APPLICATION_WINDOW(object);
     switch (property_id) {
+    case PROP_MAP:
+        g_value_set_object(value, self->map);
+        break;
     case PROP_GRID_SIZE:
         g_value_set_uint(value, self->grid_size);
         break;
@@ -61,6 +68,10 @@ static void sickle_application_window_set_property(
 {
     SickleApplicationWindow *self = SICKLE_APPLICATION_WINDOW(object);
     switch (property_id) {
+    case PROP_MAP:
+        g_clear_object(&self->map);
+        self->map = RMF_ROOT(g_value_dup_object(value));
+        break;
     case PROP_GRID_SIZE:
         self->grid_size = g_value_get_uint(value);
         break;
@@ -79,6 +90,14 @@ sickle_application_window_class_init(SickleApplicationWindowClass *klass)
     oclass->get_property = sickle_application_window_get_property;
     oclass->set_property = sickle_application_window_set_property;
 
+    obj_properties[PROP_MAP] = g_param_spec_object(
+        "map",
+        nullptr,
+        nullptr,
+        RMF_TYPE_ROOT,
+        G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS
+    );
+
     obj_properties[PROP_GRID_SIZE] = g_param_spec_uint(
         "grid-size",
         nullptr,
@@ -86,7 +105,7 @@ sickle_application_window_class_init(SickleApplicationWindowClass *klass)
         1,
         512,
         32,
-        G_PARAM_READWRITE
+        G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS
     );
 
     g_object_class_install_properties(oclass, N_PROPERTIES, obj_properties);
@@ -123,16 +142,24 @@ void sickle_application_window_open(SickleApplicationWindow *self, GFile *file)
     }
     g_print("Request to open '%s'\n", g_file_get_parse_name(file));
 
-    g_autoptr(RmfRoot) root = rmf_root_new(file);
-    RmfWorldspawn *x = rmf_root_get_worldspawn(root);
-    char *classname = rmf_entity_data_get_classname(RMF_ENTITY_DATA(x));
-    g_print("worlspawn.classname = %s\n", classname);
+    auto loader = rmf_loader_new();
+
+    g_autoptr(GError) error = nullptr;
+    rmf_loader_load_from_file(loader, file, &error);
+    if (error) {
+        g_error("%s -- %s", __FUNCTION__, error->message);
+    }
+
+    RmfRoot *root = rmf_loader_get_root(loader);
+
+    g_object_set(self, "map", root, nullptr);
 }
 
-void sickle_application_window_save(SickleApplicationWindow *self, GFile *file)
+void sickle_application_window_save(SickleApplicationWindow *, GFile *file)
 {
     if (!file) {
         return;
     }
     g_print("Request to save '%s'\n", g_file_get_parse_name(file));
+    // TODO
 }

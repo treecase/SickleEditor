@@ -16,6 +16,9 @@ add_project_arguments(
   language: 'c',
 )
 
+cc = meson.get_compiler('c')
+libm = cc.find_library('m', required: false)
+
 # Module imports #######################
 
 gnome = import('gnome')

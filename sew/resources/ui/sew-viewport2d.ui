@@ -1,11 +1,20 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <interface>
   <requires lib="gtk" version="4.0"/>
-  <template class="SewViewport2d" parent="GtkGrid">
+  <template class="SewViewport2d" parent="GtkWidget">
     <!-- Each child is a "layer", responsible for drawing a single element of the map. This is to allow CSS
-         theming by setting the color, eg. with `viewport2d .someLayer { color: red }`. Note that each layer
-         must have the same layout settings so that they get stacked on top of each other. -->
-    <!-- TODO: Add more draw layers (entities, brushes, etc.) here -->
+         theming by setting the color, eg. with `viewport2d .someLayer { color: red }`. -->
+    <!-- BEGIN layers -->
+    <!-- Brushes layer. -->
+    <child>
+      <object class="GtkDrawingArea" id="area_brushes">
+        <style>
+          <class name="brushes"/>
+        </style>
+        <property name="hexpand">yes</property>
+        <property name="vexpand">yes</property>
+      </object>
+    </child>
     <!-- Grid layer. -->
     <child>
       <object class="GtkDrawingArea" id="area_grid">
@@ -14,10 +23,33 @@
         </style>
         <property name="hexpand">yes</property>
         <property name="vexpand">yes</property>
-        <layout>
-          <property name="column">0</property>
-          <property name="row">0</property>
-        </layout>
+      </object>
+    </child>
+    <!-- END layers -->
+    <!-- BEGIN Overlays -->
+    <child>
+      <object class="GtkLabel">
+        <style>
+          <class name="info"/>
+        </style>
+        <property name="halign">start</property>
+        <property name="valign">start</property>
+        <property bind-flags="sync-create" bind-property="axis" bind-source="SewViewport2d" name="label"/>
+      </object>
+    </child>
+    <!-- END Overlays -->
+    <!-- Event handlers. -->
+    <child>
+      <object class="GtkEventControllerScroll">
+        <property name="flags">vertical</property>
+        <signal handler="on_scroll" name="scroll" object="SewViewport2d"/>
+      </object>
+    </child>
+    <child>
+      <object class="GtkGestureDrag">
+        <signal handler="on_drag_begin" name="drag-begin" object="SewViewport2d"/>
+        <signal handler="on_drag_update" name="drag-update" object="SewViewport2d"/>
+        <signal handler="on_drag_end" name="drag-end" object="SewViewport2d"/>
       </object>
     </child>
   </template>

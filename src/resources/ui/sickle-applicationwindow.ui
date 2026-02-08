@@ -44,6 +44,8 @@
             <!-- Front view -->
             <child>
               <object class="SewViewport2d" id="viewFront">
+                <property name="axis">front</property>
+                <property bind-flags="sync-create" bind-property="map" bind-source="SickleApplicationWindow" name="map"/>
                 <layout>
                   <property name="column">1</property>
                   <property name="row">0</property>
@@ -53,6 +55,8 @@
             <!-- Top view -->
             <child>
               <object class="SewViewport2d" id="viewTop">
+                <property name="axis">top</property>
+                <property bind-flags="sync-create" bind-property="map" bind-source="SickleApplicationWindow" name="map"/>
                 <layout>
                   <property name="column">0</property>
                   <property name="row">1</property>
@@ -62,6 +66,8 @@
             <!-- Right view -->
             <child>
               <object class="SewViewport2d" id="viewRight">
+                <property name="axis">right</property>
+                <property bind-flags="sync-create" bind-property="map" bind-source="SickleApplicationWindow" name="map"/>
                 <layout>
                   <property name="column">1</property>
                   <property name="row">1</property>

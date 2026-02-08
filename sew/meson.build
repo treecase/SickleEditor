@@ -59,6 +59,8 @@ sew_sources += [
 
 sew_deps = [
   gtk_dep,
+  rmf_dep,
+  libm,
 ]
 
 libsew = library(
