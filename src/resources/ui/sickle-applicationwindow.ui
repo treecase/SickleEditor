@@ -34,7 +34,7 @@
             <property name="row-spacing">3</property>
             <!-- 3D view -->
             <child>
-              <object class="GtkGLArea" id="view3D">
+              <object class="SewViewport3d" id="view3D">
                 <layout>
                   <property name="column">0</property>
                   <property name="row">0</property>

@@ -1,3 +1,6 @@
+/*
+ * Sew - Sickle Editor Widgets
+ */
 #ifndef SEW_H
 #define SEW_H
 
@@ -5,6 +8,7 @@
 
 #include <sew/sew-preferencesrow.h>
 #include <sew/sew-viewport2d.h>
+#include <sew/sew-viewport3d.h>
 
 void sew_init(void);
 

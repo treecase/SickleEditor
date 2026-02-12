@@ -102,7 +102,6 @@ static void on_scroll(SewViewport2d *self, double, double dy, GtkGestureDrag *)
 {
     g_return_if_fail(SEW_IS_VIEWPORT_2D(self));
     self->zoom = clamp(self->zoom - dy, -ZOOM_LIMIT, ZOOM_LIMIT);
-    g_print("zoom=%f\n", zoom(self->zoom));
     queue_draw(self);
 }
 

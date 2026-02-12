@@ -12,6 +12,7 @@ sew_private_sources = files()
 sew_public_sources = files(
   'sew-preferencesrow.c',
   'sew-viewport2d.c',
+  'sew-viewport3d.c',
   'sew.c',
 )
 
@@ -20,6 +21,7 @@ sew_public_sources = files(
 sew_public_headers = files(
   'sew-preferencesrow.h',
   'sew-viewport2d.h',
+  'sew-viewport3d.h',
   'sew.h',
 )
 
@@ -58,8 +60,10 @@ sew_sources += [
 # Library ##############################
 
 sew_deps = [
+  glew_dep,
   gtk_dep,
   rmf_dep,
+  libserg_dep,
   libm,
 ]
 

@@ -1,5 +1,6 @@
 #include "sew/sew.h"
 
+#include "serg/serg.h"
 #include "sew-resources.h"
 
 #include <gdk/gdk.h>
@@ -8,10 +9,13 @@
 
 void sew_init(void)
 {
+    serg_init();
+
     sew_register_resource();
 
     g_type_ensure(SEW_TYPE_PREFERENCES_ROW);
     g_type_ensure(SEW_TYPE_VIEWPORT_2D);
+    g_type_ensure(SEW_TYPE_VIEWPORT_3D);
 
     GtkCssProvider *css_provider = gtk_css_provider_new();
     gtk_css_provider_load_from_resource(
