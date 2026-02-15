@@ -28,7 +28,7 @@ gnome = import('gnome')
 gtk_dep = dependency('gtk4', version: '>=4.10')
 gio_dep = dependency('gio-2.0', version: '>=2.0')
 rmf_dep = dependency('rmf', fallback: ['rmf', 'librmf_dep'])
-glew_dep = dependency('glew')
+epoxy_dep = dependency('epoxy')
 
 # Configuration ########################
 
@@ -41,6 +41,8 @@ conf.set_quoted('SE_VERSION', meson.project_version())
 
 sew_inc = include_directories('.')
 serg_inc = include_directories('.')
+
+sickle_sources = []
 
 subdir('data')
 subdir('serg')

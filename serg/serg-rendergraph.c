@@ -23,36 +23,34 @@ struct _SergRenderGraph {
     GLuint program;
     GLuint vertex_array_object;
     struct SergRenderGraphBuffers buffers;
+    GLsizei count;
 };
 
 G_DEFINE_FINAL_TYPE(SergRenderGraph, serg_render_graph, G_TYPE_OBJECT)
 
 // Private /////////////////////////////////////////////////////////////////////
 
-static char const *load_shader_source(char const *name, GError **error)
+static GLuint make_shader(GLenum type, char const *name)
 {
     g_autofree char const *path
         = g_strdup_printf("/com/github/treecase/serg/glsl/%s", name);
-    GBytes *bytes
-        = g_resources_lookup_data(path, G_RESOURCE_LOOKUP_FLAGS_NONE, error);
-    gsize size = 0;
-    return bytes ? g_bytes_unref_to_data(bytes, &size) : nullptr;
-}
-
-static GLuint make_shader(GLenum type, char const *name)
-{
-    GLuint shader = glCreateShader(type);
 
     g_autoptr(GError) error = nullptr;
-    g_autofree char const *source = load_shader_source(name, &error);
+    GBytes *bytes
+        = g_resources_lookup_data(path, G_RESOURCE_LOOKUP_FLAGS_NONE, &error);
     if (error) {
         g_printerr("%s: %s", __FUNCTION__, error->message);
-        glDeleteShader(shader);
         return 0;
     }
-    glShaderSource(shader, 1, &source, nullptr);
 
+    gsize size = 0;
+    g_autofree char const *source = g_bytes_unref_to_data(bytes, &size);
+
+    GLuint shader = glCreateShader(type);
+    GLint length = size;
+    glShaderSource(shader, 1, &source, &length);
     glCompileShader(shader);
+
     GLint success = 0;
     glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
     if (!success) {
@@ -179,6 +177,7 @@ void serg_render_graph_set_vertices(
     SergRenderGraphVertex const vertices[length]
 )
 {
+    g_return_if_fail(SERG_IS_RENDER_GRAPH(self));
     if (self->buffers.vertex) {
         glDeleteBuffers(1, &self->buffers.vertex);
     }
@@ -204,6 +203,7 @@ void serg_render_graph_set_elements(
     GLuint const indices[length]
 )
 {
+    g_return_if_fail(SERG_IS_RENDER_GRAPH(self));
     if (self->buffers.element) {
         glDeleteBuffers(1, &self->buffers.element);
     }
@@ -218,10 +218,13 @@ void serg_render_graph_set_elements(
         self->vertex_array_object,
         self->buffers.element
     );
+    self->count = length;
 }
 
-void serg_render_graph_use(SergRenderGraph *self)
+void serg_render_graph_render(SergRenderGraph *self)
 {
+    g_return_if_fail(SERG_IS_RENDER_GRAPH(self));
     glBindVertexArray(self->vertex_array_object);
     glUseProgram(self->program);
+    glDrawElements(GL_TRIANGLE_STRIP, self->count, GL_UNSIGNED_INT, (void *)0);
 }

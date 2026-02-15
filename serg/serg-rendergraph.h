@@ -1,6 +1,6 @@
 #pragma once
 
-#include <GL/glew.h>
+#include <epoxy/gl.h>
 #include <glib-object.h>
 
 G_BEGIN_DECLS
@@ -37,6 +37,6 @@ void serg_render_graph_set_elements(
     GLuint const indices[length]
 );
 
-void serg_render_graph_use(SergRenderGraph *self);
+void serg_render_graph_render(SergRenderGraph *self);
 
 G_END_DECLS

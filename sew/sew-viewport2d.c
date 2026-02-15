@@ -130,6 +130,11 @@ static void on_drag_end(SewViewport2d *self, double, double, GtkGestureDrag *)
     gtk_widget_queue_draw(GTK_WIDGET(self->area_brushes));
 }
 
+static void on_notify_map(GObject *object, GParamSpec *, gpointer)
+{
+    gtk_widget_queue_draw(GTK_WIDGET(object));
+}
+
 static void draw_func_grid(
     GtkDrawingArea *drawing_area,
     cairo_t *cr,
@@ -380,6 +385,8 @@ static void sew_viewport_2d_class_init(SewViewport2dClass *klass)
 
 static void sew_viewport_2d_init(SewViewport2d *self)
 {
+    g_signal_connect(self, "notify::map", G_CALLBACK(on_notify_map), nullptr);
+
     gtk_widget_init_template(GTK_WIDGET(self));
 
     gtk_drawing_area_set_draw_func(

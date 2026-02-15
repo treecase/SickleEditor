@@ -38,7 +38,7 @@ serg_sources += serg_resources
 # Library ##############################
 
 serg_deps = [
-  glew_dep,
+  epoxy_dep,
   gio_dep,
 ]
 

@@ -60,7 +60,7 @@ sew_sources += [
 # Library ##############################
 
 sew_deps = [
-  glew_dep,
+  epoxy_dep,
   gtk_dep,
   rmf_dep,
   libserg_dep,

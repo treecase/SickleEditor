@@ -3,7 +3,7 @@
 #include "rmf/rmf.h"
 #include "serg/serg-rendergraph.h"
 
-#include <GL/glew.h>
+#include <epoxy/gl.h>
 
 struct _SewViewport3d {
     GtkGLArea parent_instance;
@@ -39,13 +39,13 @@ static SergRenderGraphVertex const VERTICES[] = {
 static GLuint const INDICES[] = {0, 1, 2, 3};
 
 static void log_gl_debug_message(
-    GLenum source,
+    GLenum /*source*/,
     GLenum type,
-    GLuint id,
-    GLenum severity,
-    GLsizei length,
+    GLuint /*id*/,
+    GLenum /*severity*/,
+    GLsizei /*length*/,
     GLchar const *message,
-    void const *userParam
+    void const */*userParam*/
 )
 {
     g_printerr(
@@ -55,14 +55,9 @@ static void log_gl_debug_message(
     );
 }
 
-static void init_gl_stuff(SewViewport3d *self)
+static void init_gl_stuff(void)
 {
-    GLenum err = glewContextInit();
-    if (err != GLEW_OK) {
-        g_error("GLEW failed to initialize -- %s", glewGetErrorString(err));
-    }
-
-    // glEnable(GL_CULL_FACE);
+    glEnable(GL_CULL_FACE);
     glEnable(GL_DEBUG_OUTPUT);
     glDebugMessageCallback(log_gl_debug_message, nullptr);
 }
@@ -120,7 +115,7 @@ static void sew_viewport_3d_realize(GtkWidget *widget)
     SewViewport3d *self = SEW_VIEWPORT_3D(widget);
     gtk_gl_area_make_current(area);
 
-    init_gl_stuff(self);
+    init_gl_stuff();
 
     self->graph = serg_render_graph_new();
     serg_render_graph_set_vertices(
@@ -147,16 +142,14 @@ static void sew_viewport_3d_unrealize(GtkWidget *widget)
 
 // GtkGLArea ///////////////////////////////////////////////////////////////////
 
-static gboolean sew_viewport_3d_render(GtkGLArea *area, GdkGLContext *context)
+static gboolean sew_viewport_3d_render(GtkGLArea *area, GdkGLContext *)
 {
     SewViewport3d *self = SEW_VIEWPORT_3D(area);
 
     glClearColor(0.f, 0.f, 0.f, 1.f);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glClear(GL_COLOR_BUFFER_BIT);
 
-    serg_render_graph_use(self->graph);
-    constexpr auto N = sizeof(INDICES) / sizeof(*INDICES);
-    glDrawElements(GL_TRIANGLE_STRIP, N, GL_UNSIGNED_INT, (void *)0);
+    serg_render_graph_render(self->graph);
 
     return TRUE;
 }
@@ -194,6 +187,5 @@ static void sew_viewport_3d_init(SewViewport3d *self)
     GtkGLArea *area = GTK_GL_AREA(self);
     gtk_gl_area_set_allowed_apis(area, GDK_GL_API_GL);
     gtk_gl_area_set_required_version(area, 4, 5);
-    gtk_gl_area_set_has_depth_buffer(area, TRUE);
     gtk_gl_area_set_auto_render(area, FALSE);
 }
