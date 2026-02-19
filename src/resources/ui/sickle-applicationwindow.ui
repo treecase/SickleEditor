@@ -35,6 +35,7 @@
             <!-- 3D view -->
             <child>
               <object class="SewViewport3d" id="view3D">
+                <property bind-flags="sync-create" bind-property="map" bind-source="SickleApplicationWindow" name="map"/>
                 <layout>
                   <property name="column">0</property>
                   <property name="row">0</property>

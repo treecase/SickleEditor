@@ -62,9 +62,9 @@ sew_sources += [
 sew_deps = [
   epoxy_dep,
   gtk_dep,
-  rmf_dep,
-  libserg_dep,
   libm,
+  libserg_dep,
+  rmf_dep,
 ]
 
 libsew = library(

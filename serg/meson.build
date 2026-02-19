@@ -8,6 +8,7 @@ serg_cargs = [
 serg_private_sources = files()
 
 serg_public_sources = files(
+  'serg-program.c',
   'serg-rendergraph.c',
   'serg.c',
 )
@@ -15,6 +16,7 @@ serg_public_sources = files(
 serg_private_type_headers = files()
 
 serg_public_headers = files(
+  'serg-program.h',
   'serg-rendergraph.h',
   'serg.h',
 )
@@ -40,6 +42,7 @@ serg_sources += serg_resources
 serg_deps = [
   epoxy_dep,
   gio_dep,
+  graphene_dep,
 ]
 
 libserg = library(

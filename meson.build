@@ -25,10 +25,11 @@ gnome = import('gnome')
 
 # Dependencies #########################
 
-gtk_dep = dependency('gtk4', version: '>=4.10')
+epoxy_dep = dependency('epoxy', version: '>=1.5')
 gio_dep = dependency('gio-2.0', version: '>=2.0')
+graphene_dep = dependency('graphene-gobject-1.0', version: '>=1.10')
+gtk_dep = dependency('gtk4', version: '>=4.10')
 rmf_dep = dependency('rmf', fallback: ['rmf', 'librmf_dep'])
-epoxy_dep = dependency('epoxy')
 
 # Configuration ########################
 
