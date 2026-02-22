@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<interface>
+  <requires lib="gtk" version="4.0"/>
+  <template class="SewFileRow" parent="GtkListBoxRow">
+    <child>
+      <object class="GtkLabel" id="label">
+        <binding name="label">
+          <closure type="gchararray" function="make_label">
+            <lookup name="file">SewFileRow</lookup>
+          </closure>
+        </binding>
+      </object>
+    </child>
+  </template>
+</interface>

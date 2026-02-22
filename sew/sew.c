@@ -13,6 +13,8 @@ void sew_init(void)
 
     sew_register_resource();
 
+    g_type_ensure(SEW_TYPE_BUTTON_ROW);
+    g_type_ensure(SEW_TYPE_FILE_ROW);
     g_type_ensure(SEW_TYPE_PREFERENCES_ROW);
     g_type_ensure(SEW_TYPE_VIEWPORT_2D);
     g_type_ensure(SEW_TYPE_VIEWPORT_3D);

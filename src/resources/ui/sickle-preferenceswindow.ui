@@ -24,6 +24,7 @@
       <object class="GtkBox">
         <property name="orientation">vertical</property>
         <property name="spacing">6</property>
+        <!-- Preferences Group -->
         <!-- Title -->
         <child>
           <object class="GtkLabel">
@@ -41,7 +42,7 @@
               <class name="dim-label"/>
             </style>
             <property name="halign">start</property>
-            <property name="label">Lorem ipsum sit dolor; blah blah blah.</property>
+            <property name="label">Game root paths for various data.</property>
           </object>
         </child>
         <!-- Group -->
@@ -83,7 +84,53 @@
                 <property name="as-folder">yes</property>
               </object>
             </child>
-            <!-- TODO: wad paths -->
+          </object>
+        </child>
+        <!-- Texture WAD Group -->
+        <!-- Title -->
+        <child>
+          <object class="GtkLabel">
+            <style>
+              <class name="title"/>
+            </style>
+            <property name="halign">start</property>
+            <property name="label">Texture WADs</property>
+          </object>
+        </child>
+        <!-- Description -->
+        <child>
+          <object class="GtkLabel">
+            <style>
+              <class name="dim-label"/>
+            </style>
+            <property name="halign">start</property>
+            <property name="label">List of .WAD files to load texture data from.</property>
+          </object>
+        </child>
+        <!-- Group -->
+        <child>
+          <object class="GtkListBox" id="wad_list">
+            <signal name="row-activated" handler="on_wad_list_row_activated" object="SicklePreferencesWindow"/>
+            <style>
+              <class name="rich-list"/>
+              <class name="boxed-list"/>
+            </style>
+            <!-- Add button -->
+            <child>
+              <object class="SewButtonRow" id="row_add_wad">
+                <property name="selectable">no</property>
+                <property name="start-icon-name">list-add-symbolic</property>
+                <property name="title">Add</property>
+              </object>
+            </child>
+            <!-- Remove button -->
+            <child>
+              <object class="SewButtonRow" id="row_remove_wad">
+                <property name="selectable">no</property>
+                <property name="start-icon-name">list-remove-symbolic</property>
+                <property name="title">Remove</property>
+              </object>
+            </child>
           </object>
         </child>
       </object>

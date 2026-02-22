@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<interface>
+  <requires lib="gtk" version="4.0"/>
+  <template class="SewButtonRow" parent="GtkListBoxRow">
+    <style>
+      <class name="button"/>
+    </style>
+    <child>
+      <object class="GtkBox">
+        <property name="orientation">horizontal</property>
+        <property name="halign">center</property>
+        <child>
+          <object class="GtkImage">
+            <style>
+              <class name="icon"/>
+              <class name="start"/>
+            </style>
+            <property bind-flags="sync-create" bind-property="start-icon-name" bind-source="SewButtonRow" name="icon-name"/>
+          </object>
+        </child>
+        <child>
+          <object class="GtkLabel">
+            <style>
+              <class name="title"/>
+            </style>
+            <property bind-flags="sync-create" bind-property="title" bind-source="SewButtonRow" name="label"/>
+          </object>
+        </child>
+        <child>
+          <object class="GtkImage">
+            <style>
+              <class name="icon"/>
+              <class name="end"/>
+            </style>
+            <property bind-flags="sync-create" bind-property="end-icon-name" bind-source="SewButtonRow" name="icon-name"/>
+          </object>
+        </child>
+      </object>
+    </child>
+  </template>
+</interface>

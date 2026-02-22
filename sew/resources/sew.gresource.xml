@@ -3,6 +3,8 @@
   <gresource prefix="/com/github/treecase/sew">
     <file>style.css</file>
     <!-- UI files -->
+    <file preprocess="xml-stripblanks">ui/sew-buttonrow.ui</file>
+    <file preprocess="xml-stripblanks">ui/sew-filerow.ui</file>
     <file preprocess="xml-stripblanks">ui/sew-preferencesrow.ui</file>
     <file preprocess="xml-stripblanks">ui/sew-viewport2d.ui</file>
   </gresource>

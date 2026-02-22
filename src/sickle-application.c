@@ -17,7 +17,7 @@ struct _SickleApplication {
     char *game_definition;
     char *game_root;
     char *sprite_root;
-    GPtrArray *wads;
+    GStrv wads;
 };
 
 G_DEFINE_FINAL_TYPE(SickleApplication, sickle_application, GTK_TYPE_APPLICATION)
@@ -32,14 +32,7 @@ enum {
 
 static GParamSpec *obj_properties[N_PROPERTIES] = {};
 
-// Private /////////////////////////////////////////////////////////////////////
-
-static void action_new(GSimpleAction *, GVariant *, gpointer user_data)
-{
-    GtkWindow *window
-        = gtk_application_get_active_window(GTK_APPLICATION(user_data));
-    sickle_application_window_open(SICKLE_APPLICATION_WINDOW(window), nullptr);
-}
+// Signal Handlers /////////////////////////////////////////////////////////////
 
 // helper for `action_open`
 static void on_file_dialog_open_finished(
@@ -60,6 +53,44 @@ static void on_file_dialog_open_finished(
     GtkApplication *application = GTK_APPLICATION(data);
     GtkWindow *window = gtk_application_get_active_window(application);
     sickle_application_window_open(SICKLE_APPLICATION_WINDOW(window), file);
+}
+
+// helper for `action_save`
+static void on_file_dialog_save_finished(
+    GObject *source_object,
+    GAsyncResult *res,
+    gpointer data
+)
+{
+    g_autoptr(GError) error = nullptr;
+    g_autoptr(GFile) file = gtk_file_dialog_save_finish(
+        GTK_FILE_DIALOG(source_object),
+        res,
+        &error
+    );
+    if (error && error->code != GTK_DIALOG_ERROR_DISMISSED) {
+        g_error("%s: %s\n", __FUNCTION__, error->message);
+    }
+    GtkApplication *application = GTK_APPLICATION(data);
+    GtkWindow *window = gtk_application_get_active_window(application);
+    sickle_application_window_save(SICKLE_APPLICATION_WINDOW(window), file);
+}
+
+static void on_notify_wad_paths(GObject *object, GParamSpec *, gpointer)
+{
+    SickleApplication *self = SICKLE_APPLICATION(object);
+    for (char **wad = self->wads; *wad != nullptr; ++wad) {
+        // TODO: Load the WADs
+    }
+}
+
+// Actions /////////////////////////////////////////////////////////////////////
+
+static void action_new(GSimpleAction *, GVariant *, gpointer user_data)
+{
+    GtkWindow *window
+        = gtk_application_get_active_window(GTK_APPLICATION(user_data));
+    sickle_application_window_open(SICKLE_APPLICATION_WINDOW(window), nullptr);
 }
 
 static void action_open(GSimpleAction *, GVariant *, gpointer user_data)
@@ -98,27 +129,6 @@ static void action_open(GSimpleAction *, GVariant *, gpointer user_data)
         on_file_dialog_open_finished,
         self
     );
-}
-
-// helper for `action_save`
-static void on_file_dialog_save_finished(
-    GObject *source_object,
-    GAsyncResult *res,
-    gpointer data
-)
-{
-    g_autoptr(GError) error = nullptr;
-    g_autoptr(GFile) file = gtk_file_dialog_save_finish(
-        GTK_FILE_DIALOG(source_object),
-        res,
-        &error
-    );
-    if (error && error->code != GTK_DIALOG_ERROR_DISMISSED) {
-        g_error("%s: %s\n", __FUNCTION__, error->message);
-    }
-    GtkApplication *application = GTK_APPLICATION(data);
-    GtkWindow *window = gtk_application_get_active_window(application);
-    sickle_application_window_save(SICKLE_APPLICATION_WINDOW(window), file);
 }
 
 static void action_save(GSimpleAction *, GVariant *, gpointer user_data)
@@ -221,9 +231,7 @@ static void sickle_application_finalize(GObject *object)
     g_free(self->game_definition);
     g_free(self->game_root);
     g_free(self->sprite_root);
-    if (self->wads) {
-        g_ptr_array_free(self->wads, TRUE);
-    }
+    g_strfreev(self->wads);
     G_OBJECT_CLASS(sickle_application_parent_class)->finalize(object);
 }
 
@@ -246,12 +254,7 @@ static void sickle_application_get_property(
         g_value_set_string(value, self->sprite_root);
         break;
     case PROP_WADS:
-        g_return_if_fail(self->wads);
-        GVariant *variant = g_variant_new_strv(
-            (char const *const *)self->wads->pdata,
-            self->wads->len
-        );
-        g_value_set_variant(value, variant);
+        g_value_set_boxed(value, self->wads);
         break;
     default:
         G_OBJECT_WARN_INVALID_PROPERTY_ID(object, property_id, pspec);
@@ -268,29 +271,20 @@ static void sickle_application_set_property(
     SickleApplication *const self = SICKLE_APPLICATION(object);
     switch (property_id) {
     case PROP_GAME_DEFINITION:
-        g_return_if_fail(G_VALUE_HOLDS_STRING(value));
         g_free(self->game_definition);
         self->game_definition = g_value_dup_string(value);
         break;
     case PROP_GAME_ROOT:
-        g_return_if_fail(G_VALUE_HOLDS_STRING(value));
         g_free(self->game_root);
         self->game_root = g_value_dup_string(value);
         break;
     case PROP_SPRITE_ROOT:
-        g_return_if_fail(G_VALUE_HOLDS_STRING(value));
         g_free(self->sprite_root);
         self->sprite_root = g_value_dup_string(value);
         break;
     case PROP_WADS:
-        g_return_if_fail(G_VALUE_HOLDS_VARIANT(value));
-        if (self->wads) {
-            g_ptr_array_free(self->wads, TRUE);
-        }
-        GVariant *variant = g_value_get_variant(value);
-        size_t len = 0;
-        char **data = g_variant_dup_strv(variant, &len);
-        self->wads = g_ptr_array_new_take((void **)data, len, g_free);
+        g_strfreev(self->wads);
+        self->wads = g_value_dup_boxed(value);
         break;
     default:
         G_OBJECT_WARN_INVALID_PROPERTY_ID(object, property_id, pspec);
@@ -389,7 +383,7 @@ static void sickle_application_class_init(SickleApplicationClass *klass)
         nullptr,
         nullptr,
         "",
-        G_PARAM_READWRITE
+        G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS
     );
 
     obj_properties[PROP_GAME_ROOT] = g_param_spec_string(
@@ -397,7 +391,7 @@ static void sickle_application_class_init(SickleApplicationClass *klass)
         nullptr,
         nullptr,
         "",
-        G_PARAM_READWRITE
+        G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS
     );
 
     obj_properties[PROP_SPRITE_ROOT] = g_param_spec_string(
@@ -405,16 +399,15 @@ static void sickle_application_class_init(SickleApplicationClass *klass)
         nullptr,
         nullptr,
         "",
-        G_PARAM_READWRITE
+        G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS
     );
 
-    obj_properties[PROP_WADS] = g_param_spec_variant(
+    obj_properties[PROP_WADS] = g_param_spec_boxed(
         "wad-paths",
         nullptr,
         nullptr,
-        G_VARIANT_TYPE_STRING_ARRAY,
-        nullptr,
-        G_PARAM_READWRITE
+        G_TYPE_STRV,
+        G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS
     );
 
     g_object_class_install_properties(oclass, N_PROPERTIES, obj_properties);
@@ -425,8 +418,22 @@ static void sickle_application_class_init(SickleApplicationClass *klass)
     gappclass->startup = sickle_application_startup;
 }
 
-static void sickle_application_init(SickleApplication *)
+static void sickle_application_init(SickleApplication *self)
 {
+    g_signal_connect(
+        self,
+        "notify::wad-paths",
+        G_CALLBACK(on_notify_wad_paths),
+        nullptr
+    );
+    g_autoptr(GSettings) settings = g_settings_new(SE_APPLICATION_ID);
+    g_settings_bind(
+        settings,
+        "wad-paths",
+        self,
+        "wad-paths",
+        G_SETTINGS_BIND_GET
+    );
 }
 
 // Public //////////////////////////////////////////////////////////////////////

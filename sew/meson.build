@@ -10,6 +10,8 @@ sew_cargs = [
 sew_private_sources = files()
 
 sew_public_sources = files(
+  'sew-buttonrow.c',
+  'sew-filerow.c',
   'sew-preferencesrow.c',
   'sew-viewport2d.c',
   'sew-viewport3d.c',
@@ -19,6 +21,8 @@ sew_public_sources = files(
 # sew_private_type_headers = files()
 
 sew_public_headers = files(
+  'sew-buttonrow.h',
+  'sew-filerow.h',
   'sew-preferencesrow.h',
   'sew-viewport2d.h',
   'sew-viewport3d.h',

@@ -12,6 +12,9 @@ struct _SicklePreferencesWindow {
     SewPreferencesRow *row_game_def;
     SewPreferencesRow *row_game_root;
     SewPreferencesRow *row_sprite_root;
+    GtkListBox *wad_list;
+    SewButtonRow *row_add_wad;
+    SewButtonRow *row_remove_wad;
 };
 
 G_DEFINE_FINAL_TYPE(
@@ -50,6 +53,105 @@ static GVariant *convert_file_to_uri(
     g_variant_type_equal(expected_type, G_VARIANT_TYPE_STRING);
     char *uri = g_file_get_uri(file);
     return g_variant_new_take_string(uri);
+}
+
+// Signal Handlers /////////////////////////////////////////////////////////////
+
+static void on_wad_paths_changed(
+    GSettings *settings,
+    gchar *key,
+    gpointer user_data
+)
+{
+    SicklePreferencesWindow *self = SICKLE_PREFERENCES_WINDOW(user_data);
+
+    GtkListBoxRow *row = nullptr;
+    while ((row = gtk_list_box_get_row_at_index(self->wad_list, 2))) {
+        gtk_list_box_remove(self->wad_list, GTK_WIDGET(row));
+    }
+
+    g_auto(GStrv) paths = g_settings_get_strv(settings, key);
+    for (char **path = paths; *path != nullptr; ++path) {
+        GFile *file = g_file_new_for_uri(*path);
+        SewFileRow *row = sew_file_row_new(file);
+        gtk_list_box_append(self->wad_list, GTK_WIDGET(row));
+    }
+}
+
+static void on_wad_opened(
+    GObject *source_object,
+    GAsyncResult *res,
+    gpointer data
+)
+{
+    GtkFileDialog *file_dialog = GTK_FILE_DIALOG(source_object);
+    SicklePreferencesWindow *self = SICKLE_PREFERENCES_WINDOW(data);
+
+    g_autoptr(GError) error = nullptr;
+    GFile *file = gtk_file_dialog_open_finish(file_dialog, res, &error);
+    if (error) {
+        if (error->code != GTK_DIALOG_ERROR_DISMISSED) {
+            g_printerr("%s :: %s\n", __FUNCTION__, error->message);
+        }
+        return;
+    }
+
+    g_auto(GStrv) paths = g_settings_get_strv(self->settings, "wad-paths");
+    GStrvBuilder *builder = g_strv_builder_new();
+    g_strv_builder_addv(builder, (char const **)paths);
+    // Don't add duplicates.
+    char *uri = g_file_get_uri(file);
+    for (char **path = paths; *path != nullptr; ++path) {
+        if (g_str_equal(uri, *path)) {
+            g_free(uri);
+            g_strv_builder_unref(builder);
+            return;
+        }
+    }
+    g_strv_builder_take(builder, uri);
+    g_auto(GStrv) new_paths = g_strv_builder_unref_to_strv(builder);
+    g_settings_set_strv(self->settings, "wad-paths", (char const *const *)new_paths);
+}
+
+static void on_wad_list_row_activated(
+    SicklePreferencesWindow *self,
+    GtkListBoxRow *row,
+    GtkListBox *wad_list
+)
+{
+    g_return_if_fail(SICKLE_IS_PREFERENCES_WINDOW(self));
+    g_return_if_fail(GTK_IS_LIST_BOX_ROW(row));
+    g_return_if_fail(GTK_IS_LIST_BOX(wad_list));
+    if (row == GTK_LIST_BOX_ROW(self->row_add_wad)) {
+        // Add a WAD to the list.
+        GtkFileFilter *filter = gtk_file_filter_new();
+        gtk_file_filter_set_name(filter, "WAD");
+        gtk_file_filter_add_pattern(filter, "*.wad");
+        GtkFileDialog *file_dialog = gtk_file_dialog_new();
+        gtk_file_dialog_set_default_filter(file_dialog, filter);
+        gtk_file_dialog_open(file_dialog, nullptr, nullptr, on_wad_opened, self);
+    } else if (row == GTK_LIST_BOX_ROW(self->row_remove_wad)) {
+        // Remove a WAD from the list.
+        GtkListBoxRow *selected_row = gtk_list_box_get_selected_row(wad_list);
+        if (selected_row && SEW_IS_FILE_ROW(selected_row)) {
+            g_autofree char *selected_uri = g_file_get_uri(
+                sew_file_row_get_file(SEW_FILE_ROW(selected_row))
+            );
+            g_auto(GStrv) uris =
+                g_settings_get_strv(self->settings, "wad-paths");
+            GStrvBuilder *builder = g_strv_builder_new();
+            for (char **uri = uris; *uri != nullptr; ++uri) {
+                if (!g_str_equal(*uri, selected_uri)) {
+                    g_strv_builder_add(builder, *uri);
+                }
+            }
+            g_auto(GStrv) new_uris = g_strv_builder_unref_to_strv(builder);
+            g_settings_set_strv(
+                self->settings,
+                "wad-paths",
+                (char const *const *)new_uris);
+        }
+    }
 }
 
 // GObject /////////////////////////////////////////////////////////////////////
@@ -93,6 +195,25 @@ sickle_preferences_window_class_init(SicklePreferencesWindowClass *klass)
         SicklePreferencesWindow,
         row_sprite_root
     );
+    gtk_widget_class_bind_template_child(
+        widget_class,
+        SicklePreferencesWindow,
+        wad_list
+    );
+    gtk_widget_class_bind_template_child(
+        widget_class,
+        SicklePreferencesWindow,
+        row_add_wad
+    );
+    gtk_widget_class_bind_template_child(
+        widget_class,
+        SicklePreferencesWindow,
+        row_remove_wad
+    );
+    gtk_widget_class_bind_template_callback(
+        widget_class,
+        on_wad_list_row_activated
+    );
 }
 
 static void sickle_preferences_window_init(SicklePreferencesWindow *self)
@@ -100,9 +221,12 @@ static void sickle_preferences_window_init(SicklePreferencesWindow *self)
     gtk_widget_init_template(GTK_WIDGET(self));
     self->settings = g_settings_new(SE_APPLICATION_ID);
 
+    g_signal_connect(self->settings, "changed::wad-paths", G_CALLBACK(on_wad_paths_changed), self);
+    on_wad_paths_changed(self->settings, "wad-paths", self);
+
     g_settings_bind_with_mapping(
         self->settings,
-        "fgd-path",
+       "fgd-path",
         self->row_game_def,
         "file",
         G_SETTINGS_BIND_DEFAULT,
