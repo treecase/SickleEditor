@@ -15,7 +15,7 @@ config_header = configure_file(
   output: 'config.h',
 )
 
-sickle_sources = [
+sickle_sources += [
   config_header,
   sickle_resources,
   files(
@@ -23,6 +23,7 @@ sickle_sources = [
     'sickle-applicationwindow.c',
     'sickle-main.c',
     'sickle-preferenceswindow.c',
+    'sickle-textureswindow.c',
   ),
 ]
 
@@ -30,6 +31,7 @@ sickle_deps = [
   gtk_dep,
   libsew_dep,
   rmf_dep,
+  wad_dep,
 ]
 
 executable(

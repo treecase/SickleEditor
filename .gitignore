@@ -1,6 +1,4 @@
 /.cache/
 /build/
 /subprojects/.wraplock
-/subprojects/packagecache/
-/subprojects/rmf/
-/subprojects/cglm-*/
+/subprojects/goldsrc-glib/

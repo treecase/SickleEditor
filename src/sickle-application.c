@@ -4,6 +4,8 @@
 #include "sew/sew.h"
 #include "sickle-applicationwindow.h"
 #include "sickle-preferenceswindow.h"
+#include "sickle-textureswindow.h"
+#include "wad/wad.h"
 
 #include <gio/gio.h>
 #include <glib-object.h>
@@ -17,7 +19,7 @@ struct _SickleApplication {
     char *game_definition;
     char *game_root;
     char *sprite_root;
-    GStrv wads;
+    GPtrArray *texture_archives;
 };
 
 G_DEFINE_FINAL_TYPE(SickleApplication, sickle_application, GTK_TYPE_APPLICATION)
@@ -26,11 +28,39 @@ enum {
     PROP_GAME_DEFINITION = 1,
     PROP_GAME_ROOT,
     PROP_SPRITE_ROOT,
-    PROP_WADS,
+    PROP_TEXTURE_ARCHIVES,
     N_PROPERTIES,
 };
 
 static GParamSpec *obj_properties[N_PROPERTIES] = {};
+
+// Private /////////////////////////////////////////////////////////////////////
+
+static gboolean
+convert_uris_to_texture_archives(GValue *value, GVariant *variant, gpointer)
+{
+    gsize length = 0;
+    g_autofree char const **wad_uris = g_variant_get_strv(variant, &length);
+    g_autoptr(GPtrArray) texture_archives
+        = g_ptr_array_new_full(length, g_object_unref);
+
+    g_autoptr(WadRoot) root = wad_root_new();
+    g_autoptr(GError) error = nullptr;
+    for (gsize i = 0; i < length; ++i) {
+        char const *uri = wad_uris[i];
+        g_autoptr(GFile) file = g_file_new_for_uri(uri);
+        wad_root_load_from_file(root, file, &error);
+        if (error) {
+            g_printerr("%s -- %s\n", __FUNCTION__, error->message);
+            return FALSE;
+        }
+        WadTextureArchive *archive = wad_root_get_archive(root);
+        g_ptr_array_add(texture_archives, g_object_ref(archive));
+    }
+
+    g_value_take_boxed(value, g_ptr_array_ref(texture_archives));
+    return TRUE;
+}
 
 // Signal Handlers /////////////////////////////////////////////////////////////
 
@@ -74,14 +104,6 @@ static void on_file_dialog_save_finished(
     GtkApplication *application = GTK_APPLICATION(data);
     GtkWindow *window = gtk_application_get_active_window(application);
     sickle_application_window_save(SICKLE_APPLICATION_WINDOW(window), file);
-}
-
-static void on_notify_wad_paths(GObject *object, GParamSpec *, gpointer)
-{
-    SickleApplication *self = SICKLE_APPLICATION(object);
-    for (char **wad = self->wads; *wad != nullptr; ++wad) {
-        // TODO: Load the WADs
-    }
 }
 
 // Actions /////////////////////////////////////////////////////////////////////
@@ -165,7 +187,7 @@ static void action_save(GSimpleAction *, GVariant *, gpointer user_data)
 }
 
 // helper for `action_exit`
-static void dothing(void *w, void *)
+static void close_window(void *w, void *)
 {
     gtk_window_close(GTK_WINDOW(w));
 }
@@ -173,7 +195,7 @@ static void dothing(void *w, void *)
 static void action_exit(GSimpleAction *, GVariant *, gpointer user_data)
 {
     GList *windows = gtk_application_get_windows(GTK_APPLICATION(user_data));
-    g_list_foreach(windows, dothing, nullptr);
+    g_list_foreach(windows, close_window, nullptr);
 }
 
 static void action_preferences(GSimpleAction *, GVariant *, gpointer user_data)
@@ -184,6 +206,21 @@ static void action_preferences(GSimpleAction *, GVariant *, gpointer user_data)
         gtk_application_get_active_window(GTK_APPLICATION(user_data))
     );
     gtk_window_present(GTK_WINDOW(preferences));
+}
+
+static void
+action_browse_textures(GSimpleAction *, GVariant *, gpointer user_data)
+{
+    SickleTexturesWindow *texwin = sickle_textures_window_new();
+    sickle_textures_window_set_textures(
+        texwin,
+        SICKLE_APPLICATION(user_data)->texture_archives
+    );
+    gtk_window_set_transient_for(
+        GTK_WINDOW(texwin),
+        gtk_application_get_active_window(GTK_APPLICATION(user_data))
+    );
+    gtk_window_present(GTK_WINDOW(texwin));
 }
 
 static void action_about(GSimpleAction *, GVariant *, gpointer user_data)
@@ -209,6 +246,7 @@ static GActionEntry APP_ENTRIES[] = {
     {.name = "save",        .activate = action_save},
     {.name = "exit",        .activate = action_exit},
     {.name = "preferences", .activate = action_preferences},
+    {.name = "browse-textures", .activate = action_browse_textures},
     {.name = "about",       .activate = action_about},
 };
 
@@ -231,7 +269,7 @@ static void sickle_application_finalize(GObject *object)
     g_free(self->game_definition);
     g_free(self->game_root);
     g_free(self->sprite_root);
-    g_strfreev(self->wads);
+    g_ptr_array_unref(self->texture_archives);
     G_OBJECT_CLASS(sickle_application_parent_class)->finalize(object);
 }
 
@@ -253,8 +291,8 @@ static void sickle_application_get_property(
     case PROP_SPRITE_ROOT:
         g_value_set_string(value, self->sprite_root);
         break;
-    case PROP_WADS:
-        g_value_set_boxed(value, self->wads);
+    case PROP_TEXTURE_ARCHIVES:
+        g_value_set_boxed(value, self->texture_archives);
         break;
     default:
         G_OBJECT_WARN_INVALID_PROPERTY_ID(object, property_id, pspec);
@@ -282,9 +320,11 @@ static void sickle_application_set_property(
         g_free(self->sprite_root);
         self->sprite_root = g_value_dup_string(value);
         break;
-    case PROP_WADS:
-        g_strfreev(self->wads);
-        self->wads = g_value_dup_boxed(value);
+    case PROP_TEXTURE_ARCHIVES:
+        if (self->texture_archives) {
+            g_ptr_array_unref(self->texture_archives);
+        }
+        self->texture_archives = g_value_dup_boxed(value);
         break;
     default:
         G_OBJECT_WARN_INVALID_PROPERTY_ID(object, property_id, pspec);
@@ -402,11 +442,11 @@ static void sickle_application_class_init(SickleApplicationClass *klass)
         G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS
     );
 
-    obj_properties[PROP_WADS] = g_param_spec_boxed(
-        "wad-paths",
+    obj_properties[PROP_TEXTURE_ARCHIVES] = g_param_spec_boxed(
+        "texture-archives",
         nullptr,
         nullptr,
-        G_TYPE_STRV,
+        G_TYPE_PTR_ARRAY,
         G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS
     );
 
@@ -420,19 +460,17 @@ static void sickle_application_class_init(SickleApplicationClass *klass)
 
 static void sickle_application_init(SickleApplication *self)
 {
-    g_signal_connect(
-        self,
-        "notify::wad-paths",
-        G_CALLBACK(on_notify_wad_paths),
-        nullptr
-    );
     g_autoptr(GSettings) settings = g_settings_new(SE_APPLICATION_ID);
-    g_settings_bind(
+    g_settings_bind_with_mapping(
         settings,
         "wad-paths",
         self,
-        "wad-paths",
-        G_SETTINGS_BIND_GET
+        "texture-archives",
+        G_SETTINGS_BIND_GET,
+        convert_uris_to_texture_archives,
+        nullptr,
+        nullptr,
+        nullptr
     );
 }
 
@@ -449,96 +487,3 @@ SickleApplication *sickle_application_new(void)
         nullptr
     );
 }
-
-#if 0
-Application::Application()
-: Glib::ObjectBase{typeid(Application)}
-, Gtk::Application{SE_APPLICATION_ID, Gio::Application::Flags::HANDLES_OPEN}
-, _settings{Gio::Settings::create(SE_APPLICATION_ID)}
-, _prop_fgd_path{*this, "fgd-path"}
-, _prop_game_root_path{*this, "game-root-path"}
-, _prop_sprite_root_path{*this, "sprite-root-path"}
-, _prop_wad_paths{*this, "wad-paths"}
-{
-    sew_init();
-    sickle_register_resource();
-    sickle_init_public_types();
-
-    property_fgd_path().signal_changed().connect(
-        sigc::mem_fun(*this, &Application::_on_fgd_path_changed)
-    );
-    property_game_root_path().signal_changed().connect(
-        sigc::mem_fun(*this, &Application::_on_game_root_path_changed)
-    );
-    property_sprite_root_path().signal_changed().connect(
-        sigc::mem_fun(*this, &Application::_on_sprite_root_path_changed)
-    );
-    property_wad_paths().signal_changed().connect(
-        sigc::mem_fun(*this, &Application::_on_wad_paths_changed)
-    );
-
-    _settings->bind("fgd-path", property_fgd_path());
-    _settings->bind("game-root-path", property_game_root_path());
-    _settings->bind("sprite-root-path", property_sprite_root_path());
-    _settings->bind("wad-paths", property_wad_paths());
-}
-
-// Actions /////////////////////////////////////////////////////////////////////
-
-void Application::_sync_wadpaths()
-{
-#  if 0
-    auto &texman = Sickle::Editor::Textures::TextureManager::get_reference();
-
-    auto const utf8paths = property_wad_paths().get_value();
-    std::unordered_set<std::filesystem::path> paths{};
-    std::transform(
-        utf8paths.cbegin(),
-        utf8paths.cend(),
-        std::inserter(paths, paths.begin()),
-        Glib::filename_from_utf8);
-
-    // Remove removed WADs.
-    for (auto const &wad_path : texman.get_wad_paths())
-    {
-        if (!paths.count(wad_path))
-        {
-            texman.remove_wad(wad_path);
-        }
-    }
-
-    // Add new WADs.
-    for (auto const &path : paths)
-    {
-        texman.add_wad(path);
-    }
-#  endif
-}
-
-void Application::_on_fgd_path_changed()
-{
-    auto const path = property_fgd_path().get_value();
-    if (!path.empty()) {
-        _game_definition = FGD::from_file(Glib::filename_from_utf8(path));
-        auto &games = Editor::GameDefinition::instance();
-        games.add_game(_game_definition);
-    }
-}
-
-void Application::_on_game_root_path_changed()
-{
-    auto const path = property_game_root_path().get_value();
-    World3D::PointEntitySprite::game_root_path = Glib::filename_from_utf8(path);
-}
-
-void Application::_on_sprite_root_path_changed()
-{
-    auto const path = property_sprite_root_path().get_value();
-    World3D::PointEntitySprite::sprite_root_path = Glib::filename_from_utf8(path);
-}
-
-void Application::_on_wad_paths_changed()
-{
-    _sync_wadpaths();
-}
-#endif

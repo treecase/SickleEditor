@@ -38,6 +38,12 @@
       <attribute name="label" translatable="yes">_Tools</attribute>
       <section>
         <item>
+          <attribute name="label" translatable="yes">Browse Textures</attribute>
+          <attribute name="action">app.browse-textures</attribute>
+        </item>
+      </section>
+      <section>
+        <item>
           <attribute name="label" translatable="yes">_Lua Console</attribute>
           <attribute name="action">win.openLuaConsole</attribute>
         </item>

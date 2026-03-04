@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<interface>
+  <requires lib="gtk" version="4.0"/>
+  <template class="SickleTexturesWindow" parent="GtkWindow">
+    <property name="title">Textures</property>
+    <property name="width-request">600</property>
+    <property name="height-request">440</property>
+    <!-- <property name="resizable">no</property> -->
+    <property name="modal">yes</property>
+    <property name="name">textures</property>
+    <!-- Keybinds -->
+    <child>
+      <object class="GtkShortcutController">
+        <child>
+          <object class="GtkShortcut">
+            <property name="trigger"><![CDATA[<Ctrl>Q]]></property>
+            <property name="action">action(window.close)</property>
+          </object>
+        </child>
+      </object>
+    </child>
+    <!-- Content -->
+    <child>
+      <object class="GtkBox">
+        <property name="orientation">vertical</property>
+        <child>
+          <object class="GtkSearchEntry" id="search">
+            <signal handler="on_search_search_changed" name="search-changed" object="SickleTexturesWindow"/>
+            <property name="placeholder-text">Search texture names…</property>
+          </object>
+        </child>
+        <child>
+          <object class="GtkScrolledWindow">
+            <property name="vexpand">yes</property>
+            <child>
+              <object class="GtkFlowBox" id="flowbox"/>
+            </child>
+          </object>
+        </child>
+      </object>
+    </child>
+  </template>
+</interface>

@@ -5,7 +5,7 @@ project(
     'c_std=c23',
     'warning_level=2',
   ],
-  version: '0.13.0',
+  version: '0.13.1',
   meson_version: '>=0.60.0',
   license: 'GPL-3.0-or-later',
 )
@@ -26,10 +26,11 @@ gnome = import('gnome')
 # Dependencies #########################
 
 epoxy_dep = dependency('epoxy', version: '>=1.5')
-gio_dep = dependency('gio-2.0', version: '>=2.0')
+gio_dep = dependency('gio-2.0', version: '>=2.72')
 graphene_dep = dependency('graphene-gobject-1.0', version: '>=1.10')
 gtk_dep = dependency('gtk4', version: '>=4.10')
-rmf_dep = dependency('rmf', fallback: ['rmf', 'librmf_dep'])
+rmf_dep = dependency('rmf', fallback: ['goldsrc-glib', 'librmf_dep'])
+wad_dep = dependency('wad', fallback: ['goldsrc-glib', 'libwad_dep'])
 
 # Configuration ########################
 

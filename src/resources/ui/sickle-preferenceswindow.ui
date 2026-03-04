@@ -110,7 +110,7 @@
         <!-- Group -->
         <child>
           <object class="GtkListBox" id="wad_list">
-            <signal name="row-activated" handler="on_wad_list_row_activated" object="SicklePreferencesWindow"/>
+            <signal handler="on_wad_list_row_activated" name="row-activated" object="SicklePreferencesWindow"/>
             <style>
               <class name="rich-list"/>
               <class name="boxed-list"/>

@@ -57,11 +57,8 @@ static GVariant *convert_file_to_uri(
 
 // Signal Handlers /////////////////////////////////////////////////////////////
 
-static void on_wad_paths_changed(
-    GSettings *settings,
-    gchar *key,
-    gpointer user_data
-)
+static void
+on_wad_paths_changed(GSettings *settings, gchar *key, gpointer user_data)
 {
     SicklePreferencesWindow *self = SICKLE_PREFERENCES_WINDOW(user_data);
 
@@ -78,11 +75,8 @@ static void on_wad_paths_changed(
     }
 }
 
-static void on_wad_opened(
-    GObject *source_object,
-    GAsyncResult *res,
-    gpointer data
-)
+static void
+on_wad_opened(GObject *source_object, GAsyncResult *res, gpointer data)
 {
     GtkFileDialog *file_dialog = GTK_FILE_DIALOG(source_object);
     SicklePreferencesWindow *self = SICKLE_PREFERENCES_WINDOW(data);
@@ -110,7 +104,11 @@ static void on_wad_opened(
     }
     g_strv_builder_take(builder, uri);
     g_auto(GStrv) new_paths = g_strv_builder_unref_to_strv(builder);
-    g_settings_set_strv(self->settings, "wad-paths", (char const *const *)new_paths);
+    g_settings_set_strv(
+        self->settings,
+        "wad-paths",
+        (char const *const *)new_paths
+    );
 }
 
 static void on_wad_list_row_activated(
@@ -125,11 +123,17 @@ static void on_wad_list_row_activated(
     if (row == GTK_LIST_BOX_ROW(self->row_add_wad)) {
         // Add a WAD to the list.
         GtkFileFilter *filter = gtk_file_filter_new();
-        gtk_file_filter_set_name(filter, "WAD");
+        gtk_file_filter_set_name(filter, "WAD Archive");
         gtk_file_filter_add_pattern(filter, "*.wad");
         GtkFileDialog *file_dialog = gtk_file_dialog_new();
         gtk_file_dialog_set_default_filter(file_dialog, filter);
-        gtk_file_dialog_open(file_dialog, nullptr, nullptr, on_wad_opened, self);
+        gtk_file_dialog_open(
+            file_dialog,
+            nullptr,
+            nullptr,
+            on_wad_opened,
+            self
+        );
     } else if (row == GTK_LIST_BOX_ROW(self->row_remove_wad)) {
         // Remove a WAD from the list.
         GtkListBoxRow *selected_row = gtk_list_box_get_selected_row(wad_list);
@@ -137,8 +141,8 @@ static void on_wad_list_row_activated(
             g_autofree char *selected_uri = g_file_get_uri(
                 sew_file_row_get_file(SEW_FILE_ROW(selected_row))
             );
-            g_auto(GStrv) uris =
-                g_settings_get_strv(self->settings, "wad-paths");
+            g_auto(GStrv) uris
+                = g_settings_get_strv(self->settings, "wad-paths");
             GStrvBuilder *builder = g_strv_builder_new();
             for (char **uri = uris; *uri != nullptr; ++uri) {
                 if (!g_str_equal(*uri, selected_uri)) {
@@ -149,7 +153,8 @@ static void on_wad_list_row_activated(
             g_settings_set_strv(
                 self->settings,
                 "wad-paths",
-                (char const *const *)new_uris);
+                (char const *const *)new_uris
+            );
         }
     }
 }
@@ -221,12 +226,17 @@ static void sickle_preferences_window_init(SicklePreferencesWindow *self)
     gtk_widget_init_template(GTK_WIDGET(self));
     self->settings = g_settings_new(SE_APPLICATION_ID);
 
-    g_signal_connect(self->settings, "changed::wad-paths", G_CALLBACK(on_wad_paths_changed), self);
+    g_signal_connect(
+        self->settings,
+        "changed::wad-paths",
+        G_CALLBACK(on_wad_paths_changed),
+        self
+    );
     on_wad_paths_changed(self->settings, "wad-paths", self);
 
     g_settings_bind_with_mapping(
         self->settings,
-       "fgd-path",
+        "fgd-path",
         self->row_game_def,
         "file",
         G_SETTINGS_BIND_DEFAULT,

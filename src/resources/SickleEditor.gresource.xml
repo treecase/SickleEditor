@@ -6,6 +6,7 @@
     <file preprocess="xml-stripblanks">ui/sickle-about.ui</file>
     <file preprocess="xml-stripblanks">ui/sickle-applicationwindow.ui</file>
     <file preprocess="xml-stripblanks">ui/sickle-preferenceswindow.ui</file>
+    <file preprocess="xml-stripblanks">ui/sickle-textureswindow.ui</file>
     <!-- <file preprocess="xml-stripblanks">ui/OperationSearch.glade</file> -->
     <!-- <file preprocess="xml-stripblanks">ui/TextureSelector.glade</file> -->
     <!-- Images -->
