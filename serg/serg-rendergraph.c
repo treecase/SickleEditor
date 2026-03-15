@@ -18,6 +18,8 @@ enum SergRenderGraphVertexAttribute {
 
 struct SergRenderGraphBuffers {
     GLuint vertex, element;
+    GLuint texinfo;
+    GLuint priminfo;
 };
 
 //
@@ -29,6 +31,7 @@ struct _SergRenderGraph {
     GLuint vertex_array_object;
     struct SergRenderGraphBuffers buffers;
     GLsizei count;
+    GLuint texture;
     // Properties
     graphene_point3d_t camera_position;
     graphene_euler_t camera_direction;
@@ -52,14 +55,17 @@ static void serg_render_graph_dispose(GObject *object)
 {
     auto self = SERG_RENDER_GRAPH(object);
     g_clear_object(&self->program);
-    glDeleteVertexArrays(1, &self->vertex_array_object);
-    if (self->buffers.vertex) {
-        glDeleteBuffers(1, &self->buffers.vertex);
-    }
-    if (self->buffers.element) {
-        glDeleteBuffers(1, &self->buffers.element);
-    }
     G_OBJECT_CLASS(serg_render_graph_parent_class)->dispose(object);
+}
+
+static void serg_render_graph_finalize(GObject *object)
+{
+    auto self = SERG_RENDER_GRAPH(object);
+    glDeleteVertexArrays(1, &self->vertex_array_object);
+    glDeleteBuffers(1, &self->buffers.vertex);
+    glDeleteBuffers(1, &self->buffers.element);
+    glDeleteTextures(1, &self->texture);
+    G_OBJECT_CLASS(serg_render_graph_parent_class)->finalize(object);
 }
 
 static void serg_render_graph_get_property(
@@ -122,6 +128,7 @@ static void serg_render_graph_class_init(SergRenderGraphClass *klass)
 {
     auto oclass = G_OBJECT_CLASS(klass);
     oclass->dispose = serg_render_graph_dispose;
+    oclass->finalize = serg_render_graph_finalize;
     oclass->get_property = serg_render_graph_get_property;
     oclass->set_property = serg_render_graph_set_property;
 
@@ -303,9 +310,8 @@ void serg_render_graph_set_vertices(
 )
 {
     g_return_if_fail(SERG_IS_RENDER_GRAPH(self));
-    if (self->buffers.vertex) {
-        glDeleteBuffers(1, &self->buffers.vertex);
-    }
+    g_return_if_fail(length > 0 && vertices != nullptr);
+    glDeleteBuffers(1, &self->buffers.vertex);
     glCreateBuffers(1, &self->buffers.vertex);
     glNamedBufferStorage(
         self->buffers.vertex,
@@ -329,9 +335,8 @@ void serg_render_graph_set_elements(
 )
 {
     g_return_if_fail(SERG_IS_RENDER_GRAPH(self));
-    if (self->buffers.element) {
-        glDeleteBuffers(1, &self->buffers.element);
-    }
+    g_return_if_fail(length > 0 && indices != nullptr);
+    glDeleteBuffers(1, &self->buffers.element);
     glCreateBuffers(1, &self->buffers.element);
     glNamedBufferStorage(
         self->buffers.element,
@@ -344,6 +349,83 @@ void serg_render_graph_set_elements(
         self->buffers.element
     );
     self->count = length;
+}
+
+void serg_render_graph_set_textures(
+    SergRenderGraph *self,
+    size_t n_textures,
+    SergTextureData textures[n_textures]
+)
+{
+    g_return_if_fail(SERG_IS_RENDER_GRAPH(self));
+    g_return_if_fail(n_textures > 0 && textures != nullptr);
+
+    GLsizei max_width = 0, max_height = 0;
+    for (size_t i = 0; i < n_textures; ++i) {
+        if (textures[i].width > max_width) {
+            max_width = textures[i].width;
+        }
+        if (textures[i].height > max_height) {
+            max_height = textures[i].height;
+        }
+    }
+
+    // Texture 0 is reserved as a "missing texture" image.
+    glDeleteTextures(1, &self->texture);
+    glCreateTextures(GL_TEXTURE_2D_ARRAY, 1, &self->texture);
+    glTextureStorage3D(
+        self->texture,
+        1,
+        GL_RGBA8,
+        max_width,
+        max_height,
+        n_textures + 1
+    );
+    GLubyte clear_color[4] = {0xff, 0x00, 0xff, 0xff};
+    glClearTexImage(self->texture, 0, GL_RGBA, GL_UNSIGNED_BYTE, clear_color);
+    for (size_t i = 0; i < n_textures; ++i) {
+        glTextureSubImage3D(
+            self->texture,
+            0,
+            0,
+            0,
+            1 + i,
+            textures[i].width,
+            textures[i].height,
+            1,
+            GL_RGBA,
+            GL_UNSIGNED_BYTE,
+            textures[i].pixels
+        );
+    }
+
+    GLint texinfo[(1 + n_textures) * 2];
+    texinfo[0] = 1;
+    texinfo[1] = 1;
+    for (size_t i = 0; i < n_textures; ++i) {
+        texinfo[(i + 1) * 2 + 0] = textures[i].width;
+        texinfo[(i + 1) * 2 + 1] = textures[i].height;
+    }
+
+    glDeleteBuffers(1, &self->buffers.texinfo);
+    glCreateBuffers(1, &self->buffers.texinfo);
+    glNamedBufferStorage(self->buffers.texinfo, sizeof(texinfo), texinfo, 0);
+}
+
+void serg_render_graph_set_primitive_data(
+    SergRenderGraph *self,
+    size_t n_primitives,
+    SergPrimitiveData primitive_data[n_primitives]
+)
+{
+    glDeleteBuffers(1, &self->buffers.priminfo);
+    glCreateBuffers(1, &self->buffers.priminfo);
+    glNamedBufferStorage(
+        self->buffers.priminfo,
+        sizeof(GLint) * n_primitives,
+        primitive_data,
+        0
+    );
 }
 
 void serg_render_graph_render(SergRenderGraph *self)
@@ -373,9 +455,11 @@ void serg_render_graph_render(SergRenderGraph *self)
 
     uniforms.sampler = 0;
 
-    graphene_vec3_init(&uniforms.modulate, 0.2f, 0.4f, 0.4f);
+    graphene_vec3_init(&uniforms.modulate, 1.0f, 1.0f, 1.0f);
 
-    // TODO: Bind texture
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, self->buffers.texinfo);
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, self->buffers.priminfo);
+    glBindTextureUnit(uniforms.sampler, self->texture);
     glBindVertexArray(self->vertex_array_object);
     serg_program_use(self->program, &uniforms);
     glDrawElements(GL_TRIANGLE_FAN, self->count, GL_UNSIGNED_INT, (void *)0);

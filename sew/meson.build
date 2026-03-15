@@ -71,6 +71,7 @@ sew_deps = [
   libm,
   libserg_dep,
   rmf_dep,
+  wad_dep,
 ]
 
 libsew = library(

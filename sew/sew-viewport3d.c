@@ -2,6 +2,7 @@
 
 #include "rmf/rmf.h"
 #include "serg/serg-rendergraph.h"
+#include "wad/wad.h"
 
 #include <epoxy/gl.h>
 
@@ -9,8 +10,11 @@ struct _SewViewport3d {
     GtkGLArea parent_instance;
     // Properties
     RmfRoot *map;
+    GPtrArray *textures;
     // Private
     SergRenderGraph *graph;
+    GHashTable *gl_textures;
+
     struct {
         float forward, backward;
         float right, left;
@@ -24,6 +28,7 @@ G_DEFINE_FINAL_TYPE(SewViewport3d, sew_viewport_3d, GTK_TYPE_GL_AREA)
 
 enum Property {
     PROP_MAP = 1,
+    PROP_TEXTURES,
     N_PROPERTIES,
 };
 
@@ -66,8 +71,7 @@ static gboolean on_key_pressed(
 )
 {
     SewViewport3d *self = SEW_VIEWPORT_3D(user_data);
-    switch (keyval)
-    {
+    switch (keyval) {
     case GDK_KEY_q:
         self->input.up = 1.f;
         break;
@@ -113,8 +117,7 @@ static gboolean on_key_released(
 )
 {
     SewViewport3d *self = SEW_VIEWPORT_3D(user_data);
-    switch (keyval)
-    {
+    switch (keyval) {
     case GDK_KEY_q:
         self->input.up = 0.f;
         break;
@@ -166,12 +169,12 @@ static gboolean on_tick(GtkWidget *widget, GdkFrameClock *frame_clock, gpointer)
 {
     SewViewport3d *self = SEW_VIEWPORT_3D(widget);
 
-    constexpr float MOVE_SPEED = 192.f; // units/second
-    constexpr float TURN_SPEED = 120.f; // degrees/second
+    constexpr float MOVE_SPEED = 192.f;  // units/second
+    constexpr float TURN_SPEED = 120.f;  // degrees/second
     constexpr float PITCH_LIMIT = 89.9f; // degrees
 
     float fps = gdk_frame_clock_get_fps(frame_clock);
-    fps = fps != 0.f? fps : 60.f;
+    fps = fps != 0.f ? fps : 60.f;
     float delta = 1.f / fps;
 
     // Update the camera's direction:
@@ -187,8 +190,8 @@ static gboolean on_tick(GtkWidget *widget, GdkFrameClock *frame_clock, gpointer)
         0.f
     );
     // Get current camera direction
-    graphene_euler_t const *direction =
-        serg_render_graph_get_camera_direction(self->graph);
+    graphene_euler_t const *direction
+        = serg_render_graph_get_camera_direction(self->graph);
     // Camera current pitch/yaw/roll (degrees)
     graphene_vec3_t vDirection;
     graphene_euler_to_vec3(direction, &vDirection);
@@ -235,9 +238,17 @@ static gboolean on_tick(GtkWidget *widget, GdkFrameClock *frame_clock, gpointer)
     // Transform deltas from camera space to world space
     graphene_matrix_t camera_to_world;
     graphene_euler_to_matrix(&direction_new, &camera_to_world);
-    graphene_matrix_transform_vec3(&camera_to_world, &right_delta, &right_delta);
+    graphene_matrix_transform_vec3(
+        &camera_to_world,
+        &right_delta,
+        &right_delta
+    );
     graphene_matrix_transform_vec3(&camera_to_world, &up_delta, &up_delta);
-    graphene_matrix_transform_vec3(&camera_to_world, &forward_delta, &forward_delta);
+    graphene_matrix_transform_vec3(
+        &camera_to_world,
+        &forward_delta,
+        &forward_delta
+    );
     // Compute final world space delta
     graphene_vec3_t position_delta;
     graphene_vec3_init(&position_delta, 0.f, 0.f, 0.f);
@@ -262,6 +273,12 @@ static gboolean on_tick(GtkWidget *widget, GdkFrameClock *frame_clock, gpointer)
     return G_SOURCE_CONTINUE;
 }
 
+static float
+vec3_scalar_project(graphene_vec3_t const *a, graphene_vec3_t const *b)
+{
+    return graphene_vec3_dot(a, b) / graphene_vec3_length(b);
+}
+
 static void on_map_changed(GObject *object, GParamSpec *, gpointer)
 {
     SewViewport3d *self = SEW_VIEWPORT_3D(object);
@@ -269,37 +286,64 @@ static void on_map_changed(GObject *object, GParamSpec *, gpointer)
         return;
     }
 
-    g_autoptr(GArray) VERTICES = g_array_new(FALSE, FALSE, sizeof(SergRenderGraphVertex));
+    g_autoptr(GArray) PRIMITIVE_DATA
+        = g_array_new(FALSE, FALSE, sizeof(GLuint));
+    g_autoptr(GArray) VERTICES
+        = g_array_new(FALSE, FALSE, sizeof(SergRenderGraphVertex));
     g_autoptr(GArray) INDICES = g_array_new(FALSE, FALSE, sizeof(GLuint));
 
     RmfWorldspawn *worldspawn = rmf_root_get_worldspawn(self->map);
-    RmfMapObjectIterator *children = rmf_map_object_get_children(RMF_MAP_OBJECT(worldspawn));
+    RmfMapObjectIterator *children
+        = rmf_map_object_get_children(RMF_MAP_OBJECT(worldspawn));
     GLuint index = 0;
-    RMF_ITERATOR_FOREACH(RmfMapObject, child, children) {
+    RMF_ITERATOR_FOREACH(RmfMapObject, child, children)
+    {
         if (RMF_IS_SOLID(child)) {
             RmfFaceIterator *faces = rmf_solid_get_faces(RMF_SOLID(child));
-            RMF_ITERATOR_FOREACH(RmfFace, face, faces) {
-                // Compute the face normal.
-                graphene_vec3_t planeA, planeB, planeNormal;
+            RMF_ITERATOR_FOREACH(RmfFace, face, faces)
+            {
+                // For computing texture coordinates.
+                graphene_vec3_t u_axis, v_axis;
                 graphene_vec3_init(
-                    &planeA,
-                    face->plane_points[1].x - face->plane_points[0].x,
-                    face->plane_points[1].y - face->plane_points[0].y,
-                    face->plane_points[1].z - face->plane_points[0].z
+                    &u_axis,
+                    face->right_axis.x,
+                    face->right_axis.y,
+                    face->right_axis.z
                 );
                 graphene_vec3_init(
-                    &planeB,
-                    face->plane_points[2].x - face->plane_points[0].x,
-                    face->plane_points[2].y - face->plane_points[0].y,
-                    face->plane_points[2].z - face->plane_points[0].z
+                    &v_axis,
+                    face->down_axis.x,
+                    face->down_axis.y,
+                    face->down_axis.z
                 );
-                graphene_vec3_cross(&planeA, &planeB, &planeNormal);
-                graphene_vec3_normalize(&planeNormal, &planeNormal);
+                // Compute the face's normal.
+                graphene_plane_t plane;
+                graphene_plane_init_from_points(
+                    &plane,
+                    &(graphene_point3d_t){face->plane_points[2].x,
+                                          face->plane_points[2].y,
+                                          face->plane_points[2].z},
+                    &(graphene_point3d_t){face->plane_points[1].x,
+                                          face->plane_points[1].y,
+                                          face->plane_points[1].z},
+                    &(graphene_point3d_t){face->plane_points[0].x,
+                                          face->plane_points[0].y,
+                                          face->plane_points[0].z}
+                );
+                graphene_vec3_t planeNormal;
+                graphene_plane_get_normal(&plane, &planeNormal);
                 // RMF stores vertices in clockwise order, so they are added in
                 // reverse since OpenGL uses counterclockwise winding.
                 RmfVector *vertices = (RmfVector *)face->vertices->data;
                 for (guint i = face->vertices->len; i > 0; --i) {
                     RmfVector *vertex = &vertices[i - 1];
+                    graphene_vec3_t vertex_v3;
+                    graphene_vec3_init(
+                        &vertex_v3,
+                        vertex->x,
+                        vertex->y,
+                        vertex->z
+                    );
                     SergRenderGraphVertex rVertex = {
                         .position = {vertex->x, vertex->y, vertex->z},
                         .normal = {
@@ -307,7 +351,10 @@ static void on_map_changed(GObject *object, GParamSpec *, gpointer)
                             graphene_vec3_get_y(&planeNormal),
                             graphene_vec3_get_z(&planeNormal),
                         },
-                        .texcoord = {0.f, 0.f}, // TODO
+                        .texcoord = {
+                            vec3_scalar_project(&vertex_v3, &u_axis) / face->scale_x + face->shift_x,
+                            vec3_scalar_project(&vertex_v3, &v_axis) / face->scale_y + face->shift_y,
+                        },
                     };
                     g_array_append_val(VERTICES, rVertex);
                     g_array_append_val(INDICES, index);
@@ -315,12 +362,100 @@ static void on_map_changed(GObject *object, GParamSpec *, gpointer)
                 }
                 constexpr GLuint RESTART_IDX = 0xffffffff;
                 g_array_append_val(INDICES, RESTART_IDX);
+                // FIXME: Kludge
+                GLuint texture_z = self->gl_textures
+                    ? GPOINTER_TO_UINT(g_hash_table_lookup(
+                          self->gl_textures,
+                          face->texture_name
+                      ))
+                    : 0;
+                for (size_t i = 0; i < face->vertices->len - 2; ++i) {
+                    g_array_append_val(PRIMITIVE_DATA, texture_z);
+                }
             }
         }
     }
 
-    serg_render_graph_set_vertices(self->graph, VERTICES->len, (SergRenderGraphVertex *)VERTICES->data);
-    serg_render_graph_set_elements(self->graph, INDICES->len, (GLuint *)INDICES->data);
+    serg_render_graph_set_vertices(
+        self->graph,
+        VERTICES->len,
+        (SergRenderGraphVertex *)VERTICES->data
+    );
+    serg_render_graph_set_elements(
+        self->graph,
+        INDICES->len,
+        (GLuint *)INDICES->data
+    );
+    serg_render_graph_set_primitive_data(
+        self->graph,
+        PRIMITIVE_DATA->len,
+        (SergPrimitiveData *)PRIMITIVE_DATA->data
+    );
+}
+
+static void clear_serg_texture_data(SergTextureData *texdata)
+{
+    g_free(texdata->pixels);
+}
+
+static void on_textures_changed(GObject *object, GParamSpec *, gpointer)
+{
+    SewViewport3d *self = SEW_VIEWPORT_3D(object);
+    if (self->textures == nullptr) {
+        return;
+    }
+
+    g_autoptr(GArray) array
+        = g_array_new(FALSE, FALSE, sizeof(SergTextureData));
+    g_array_set_clear_func(array, (GDestroyNotify)clear_serg_texture_data);
+
+    g_autoptr(GHashTable) hash_table
+        = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, nullptr);
+
+    // Generate RGBA pixel buffers from MipTexFiles.
+    for (size_t i = 0; i < self->textures->len; ++i) {
+        WadTextureArchive *archive = self->textures->pdata[i];
+        g_autofree char const **names = wad_texture_archive_get_names(archive);
+        for (char const **name = names; *name; ++name) {
+            GValue const *value
+                = wad_texture_archive_get_texture(archive, *name);
+            if (G_VALUE_TYPE(value) == WAD_TYPE_MIPTEX_FILE) {
+                WadMiptexFile const *miptex = g_value_get_boxed(value);
+
+                SergTextureData texdata;
+                texdata.width = miptex->width;
+                texdata.height = miptex->height;
+                texdata.pixels
+                    = g_new(GLubyte, texdata.width * texdata.height * 4);
+
+                for (size_t i = 0; i < miptex->mip_images[0]->len; ++i) {
+                    WadRgb const *palette = (WadRgb *)miptex->palette->data;
+                    GLubyte p = miptex->mip_images[0]->data[i];
+                    texdata.pixels[(i * 4) + 0] = palette[p].rgb[0];
+                    texdata.pixels[(i * 4) + 1] = palette[p].rgb[1];
+                    texdata.pixels[(i * 4) + 2] = palette[p].rgb[2];
+                    texdata.pixels[(i * 4) + 3] = 0xff;
+                }
+
+                g_array_append_val(array, texdata);
+                g_hash_table_replace(
+                    hash_table,
+                    g_strdup(*name),
+                    GUINT_TO_POINTER(array->len)
+                );
+            }
+        }
+    }
+
+    serg_render_graph_set_textures(
+        self->graph,
+        array->len,
+        (SergTextureData *)array->data
+    );
+    self->gl_textures = g_hash_table_ref(hash_table);
+
+    // Map data must be updated with new texture ids.
+    on_map_changed(object, obj_properties[PROP_MAP], nullptr);
 }
 
 static void on_resized(GtkGLArea *area, gint width, gint height, gpointer)
@@ -335,6 +470,10 @@ static void sew_viewport_3d_dispose(GObject *object)
 {
     auto self = SEW_VIEWPORT_3D(object);
     g_clear_object(&self->map);
+    if (self->textures) {
+        g_ptr_array_unref(self->textures);
+        self->textures = nullptr;
+    }
     G_OBJECT_CLASS(sew_viewport_3d_parent_class)->dispose(object);
 }
 
@@ -349,6 +488,9 @@ static void sew_viewport_3d_get_property(
     switch ((enum Property)property_id) {
     case PROP_MAP:
         g_value_set_object(value, self->map);
+        break;
+    case PROP_TEXTURES:
+        g_value_set_boxed(value, self->textures);
         break;
     default:
         G_OBJECT_WARN_INVALID_PROPERTY_ID(object, property_id, pspec);
@@ -369,6 +511,12 @@ static void sew_viewport_3d_set_property(
         g_clear_object(&self->map);
         self->map = g_value_get_object(value);
         break;
+    case PROP_TEXTURES:
+        if (self->textures) {
+            g_ptr_array_unref(self->textures);
+        }
+        self->textures = g_value_get_boxed(value);
+        break;
     default:
         G_OBJECT_WARN_INVALID_PROPERTY_ID(object, property_id, pspec);
         break;
@@ -388,7 +536,9 @@ static void sew_viewport_3d_realize(GtkWidget *widget)
 
     self->graph = serg_render_graph_new();
     on_map_changed(G_OBJECT(self), obj_properties[PROP_MAP], nullptr);
+    on_textures_changed(G_OBJECT(self), obj_properties[PROP_TEXTURES], nullptr);
     g_signal_handlers_unblock_by_func(self, on_map_changed, nullptr);
+    g_signal_handlers_unblock_by_func(self, on_textures_changed, nullptr);
 }
 
 static void sew_viewport_3d_unrealize(GtkWidget *widget)
@@ -396,7 +546,13 @@ static void sew_viewport_3d_unrealize(GtkWidget *widget)
     gtk_gl_area_make_current(GTK_GL_AREA(widget));
     SewViewport3d *self = SEW_VIEWPORT_3D(widget);
 
+    if (self->gl_textures) {
+        g_hash_table_destroy(self->gl_textures);
+        self->gl_textures = nullptr;
+    }
+
     g_signal_handlers_block_by_func(self, on_map_changed, nullptr);
+    g_signal_handlers_block_by_func(self, on_textures_changed, nullptr);
     g_clear_object(&self->graph);
 
     GTK_WIDGET_CLASS(sew_viewport_3d_parent_class)->unrealize(widget);
@@ -441,14 +597,29 @@ static void sew_viewport_3d_class_init(SewViewport3dClass *klass)
         G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS
     );
 
+    obj_properties[PROP_TEXTURES] = g_param_spec_boxed(
+        "textures",
+        nullptr,
+        nullptr,
+        G_TYPE_PTR_ARRAY,
+        G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS
+    );
+
     g_object_class_install_properties(oclass, N_PROPERTIES, obj_properties);
 }
 
 static void sew_viewport_3d_init(SewViewport3d *self)
 {
     g_signal_connect(self, "notify::map", G_CALLBACK(on_map_changed), nullptr);
+    g_signal_connect(
+        self,
+        "notify::textures",
+        G_CALLBACK(on_textures_changed),
+        nullptr
+    );
     g_signal_connect(self, "resize", G_CALLBACK(on_resized), nullptr);
     g_signal_handlers_block_by_func(self, on_map_changed, nullptr);
+    g_signal_handlers_block_by_func(self, on_textures_changed, nullptr);
 
     GtkGLArea *area = GTK_GL_AREA(self);
     gtk_gl_area_set_allowed_apis(area, GDK_GL_API_GL);
@@ -457,8 +628,18 @@ static void sew_viewport_3d_init(SewViewport3d *self)
     gtk_gl_area_set_auto_render(area, FALSE);
 
     auto controller = gtk_event_controller_key_new();
-    g_signal_connect(controller, "key-pressed", G_CALLBACK(on_key_pressed), self);
-    g_signal_connect(controller, "key-released", G_CALLBACK(on_key_released), self);
+    g_signal_connect(
+        controller,
+        "key-pressed",
+        G_CALLBACK(on_key_pressed),
+        self
+    );
+    g_signal_connect(
+        controller,
+        "key-released",
+        G_CALLBACK(on_key_released),
+        self
+    );
 
     gtk_widget_add_controller(GTK_WIDGET(self), controller);
     gtk_widget_add_tick_callback(GTK_WIDGET(self), on_tick, nullptr, nullptr);

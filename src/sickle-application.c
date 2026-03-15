@@ -487,3 +487,11 @@ SickleApplication *sickle_application_new(void)
         nullptr
     );
 }
+
+WadTextureArchive **
+sickle_application_get_texture_archives(SickleApplication *application)
+{
+    GPtrArray *texture_archives = nullptr;
+    g_object_get(application, "texture-archives", &texture_archives, nullptr);
+    return (WadTextureArchive **)texture_archives->pdata;
+}

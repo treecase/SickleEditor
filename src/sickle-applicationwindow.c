@@ -2,14 +2,21 @@
 
 #include "config.h"
 #include "rmf/rmf.h"
+#include "sew/sew.h"
+#include "sickle-application.h"
 
 #include <glib-object.h>
 #include <gtk/gtk.h>
 
 struct _SickleApplicationWindow {
     GtkApplicationWindow parent_instance;
+    // Private
+    GBinding *binding_application_view3d_textures;
+    // Properties
     RmfRoot *map;
     unsigned int grid_size;
+    // Template widgets
+    SewViewport3d *view3D;
 };
 
 G_DEFINE_FINAL_TYPE(
@@ -26,12 +33,30 @@ enum {
 
 static GParamSpec *obj_properties[N_PROPERTIES];
 
+// Signal Handlers /////////////////////////////////////////////////////////////
+
+static void on_notify_application(GObject *object, GParamSpec *, gpointer)
+{
+    SickleApplicationWindow *self = SICKLE_APPLICATION_WINDOW(object);
+    if (self->binding_application_view3d_textures) {
+        g_binding_unbind(self->binding_application_view3d_textures);
+    }
+    self->binding_application_view3d_textures = g_object_bind_property(
+        gtk_window_get_application(GTK_WINDOW(self)),
+        "texture-archives",
+        self->view3D,
+        "textures",
+        G_BINDING_SYNC_CREATE
+    );
+}
+
 // GObject /////////////////////////////////////////////////////////////////////
 
 static void sickle_application_window_dispose(GObject *object)
 {
     auto self = SICKLE_APPLICATION_WINDOW(object);
     g_clear_object(&self->map);
+    g_clear_object(&self->binding_application_view3d_textures);
     gtk_widget_dispose_template(
         GTK_WIDGET(object),
         SICKLE_TYPE_APPLICATION_WINDOW
@@ -115,11 +140,22 @@ sickle_application_window_class_init(SickleApplicationWindowClass *klass)
         widget_class,
         SE_GRESOURCE_PREFIX "ui/sickle-applicationwindow.ui"
     );
+    gtk_widget_class_bind_template_child(
+        widget_class,
+        SickleApplicationWindow,
+        view3D
+    );
 }
 
 static void sickle_application_window_init(SickleApplicationWindow *self)
 {
     gtk_widget_init_template(GTK_WIDGET(self));
+    g_signal_connect(
+        self,
+        "notify::application",
+        G_CALLBACK(on_notify_application),
+        nullptr
+    );
 }
 
 // Public //////////////////////////////////////////////////////////////////////
