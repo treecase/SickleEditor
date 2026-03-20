@@ -8,6 +8,7 @@
 struct _SergProgram {
     GObject parent_instance;
     GLuint id;
+
     struct {
         GLint model;
         GLint view;
@@ -109,9 +110,11 @@ static void serg_program_init(SergProgram *self)
 
     self->uniform_locations.model = glGetUniformLocation(self->id, "model");
     self->uniform_locations.view = glGetUniformLocation(self->id, "view");
-    self->uniform_locations.projection = glGetUniformLocation(self->id, "projection");
+    self->uniform_locations.projection
+        = glGetUniformLocation(self->id, "projection");
     self->uniform_locations.sampler = glGetUniformLocation(self->id, "sampler");
-    self->uniform_locations.modulate = glGetUniformLocation(self->id, "modulate");
+    self->uniform_locations.modulate
+        = glGetUniformLocation(self->id, "modulate");
 }
 
 // Public //////////////////////////////////////////////////////////////////////
@@ -133,11 +136,38 @@ void serg_program_use(SergProgram *self, SergProgramUniforms const *uniforms)
     graphene_matrix_to_float(&uniforms->projection, projection);
     graphene_vec3_to_float(&uniforms->modulate, modulate);
 
-    glProgramUniformMatrix4fv(self->id, self->uniform_locations.model, 1, GL_FALSE, model);
-    glProgramUniformMatrix4fv(self->id, self->uniform_locations.view, 1, GL_FALSE, view);
-    glProgramUniformMatrix4fv(self->id, self->uniform_locations.projection, 1, GL_FALSE, projection);
-    glProgramUniform1i(self->id, self->uniform_locations.sampler, uniforms->sampler);
-    glProgramUniform3fv(self->id, self->uniform_locations.modulate, 1, modulate);
+    glProgramUniformMatrix4fv(
+        self->id,
+        self->uniform_locations.model,
+        1,
+        GL_FALSE,
+        model
+    );
+    glProgramUniformMatrix4fv(
+        self->id,
+        self->uniform_locations.view,
+        1,
+        GL_FALSE,
+        view
+    );
+    glProgramUniformMatrix4fv(
+        self->id,
+        self->uniform_locations.projection,
+        1,
+        GL_FALSE,
+        projection
+    );
+    glProgramUniform1i(
+        self->id,
+        self->uniform_locations.sampler,
+        uniforms->sampler
+    );
+    glProgramUniform3fv(
+        self->id,
+        self->uniform_locations.modulate,
+        1,
+        modulate
+    );
 
     glUseProgram(self->id);
 }

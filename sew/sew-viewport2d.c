@@ -127,12 +127,12 @@ static void on_drag_update(
 static void on_drag_end(SewViewport2d *self, double, double, GtkGestureDrag *)
 {
     g_return_if_fail(SEW_IS_VIEWPORT_2D(self));
-    gtk_widget_queue_draw(GTK_WIDGET(self->area_brushes));
+    queue_draw(self);
 }
 
 static void on_notify_map(GObject *object, GParamSpec *, gpointer)
 {
-    gtk_widget_queue_draw(GTK_WIDGET(object));
+    queue_draw(SEW_VIEWPORT_2D(object));
 }
 
 static void draw_func_grid(

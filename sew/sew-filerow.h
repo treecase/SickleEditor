@@ -11,13 +11,7 @@ G_BEGIN_DECLS
 
 #define SEW_TYPE_FILE_ROW sew_file_row_get_type()
 
-G_DECLARE_FINAL_TYPE(
-    SewFileRow,
-    sew_file_row,
-    SEW,
-    FILE_ROW,
-    GtkListBoxRow
-)
+G_DECLARE_FINAL_TYPE(SewFileRow, sew_file_row, SEW, FILE_ROW, GtkListBoxRow)
 
 SewFileRow *sew_file_row_new(GFile *file);
 

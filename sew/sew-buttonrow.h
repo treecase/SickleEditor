@@ -22,9 +22,11 @@ char const *sew_button_row_get_title(SewButtonRow *self);
 void sew_button_row_set_title(SewButtonRow *self, char const *title);
 
 char const *sew_button_row_get_end_icon_name(SewButtonRow *self);
-void sew_button_row_set_end_icon_name(SewButtonRow *self, char const *icon_name);
+void
+sew_button_row_set_end_icon_name(SewButtonRow *self, char const *icon_name);
 
 char const *sew_button_row_get_start_icon_name(SewButtonRow *self);
-void sew_button_row_set_start_icon_name(SewButtonRow *self, char const *icon_name);
+void
+sew_button_row_set_start_icon_name(SewButtonRow *self, char const *icon_name);
 
 G_END_DECLS

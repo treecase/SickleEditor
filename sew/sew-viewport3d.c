@@ -283,6 +283,8 @@ static void on_map_changed(GObject *object, GParamSpec *, gpointer)
 {
     SewViewport3d *self = SEW_VIEWPORT_3D(object);
     if (self->map == nullptr) {
+        g_clear_object(&self->graph);
+        self->graph = serg_render_graph_new();
         return;
     }
 
@@ -320,15 +322,21 @@ static void on_map_changed(GObject *object, GParamSpec *, gpointer)
                 graphene_plane_t plane;
                 graphene_plane_init_from_points(
                     &plane,
-                    &(graphene_point3d_t){face->plane_points[2].x,
-                                          face->plane_points[2].y,
-                                          face->plane_points[2].z},
-                    &(graphene_point3d_t){face->plane_points[1].x,
-                                          face->plane_points[1].y,
-                                          face->plane_points[1].z},
-                    &(graphene_point3d_t){face->plane_points[0].x,
-                                          face->plane_points[0].y,
-                                          face->plane_points[0].z}
+                    &(graphene_point3d_t){
+                        face->plane_points[2].x,
+                        face->plane_points[2].y,
+                        face->plane_points[2].z
+                    },
+                    &(graphene_point3d_t){
+                        face->plane_points[1].x,
+                        face->plane_points[1].y,
+                        face->plane_points[1].z
+                    },
+                    &(graphene_point3d_t){
+                        face->plane_points[0].x,
+                        face->plane_points[0].y,
+                        face->plane_points[0].z
+                    }
                 );
                 graphene_vec3_t planeNormal;
                 graphene_plane_get_normal(&plane, &planeNormal);

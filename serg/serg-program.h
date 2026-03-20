@@ -18,16 +18,11 @@ typedef struct _SergProgram SergProgram;
 
 #define SERG_TYPE_PROGRAM serg_program_get_type()
 
-G_DECLARE_FINAL_TYPE(
-    SergProgram,
-    serg_program,
-    SERG,
-    PROGRAM,
-    GObject
-)
+G_DECLARE_FINAL_TYPE(SergProgram, serg_program, SERG, PROGRAM, GObject)
 
 SergProgram *serg_program_new(void);
 
-void serg_program_use(SergProgram *program, SergProgramUniforms const *uniforms);
+void
+serg_program_use(SergProgram *program, SergProgramUniforms const *uniforms);
 
 G_END_DECLS

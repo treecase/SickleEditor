@@ -1,5 +1,6 @@
-#include "serg-resources.h"
 #include "serg.h"
+
+#include "serg-resources.h"
 
 void serg_init(void)
 {

@@ -10,11 +10,7 @@ struct _SewFileRow {
     GFile *file;
 };
 
-G_DEFINE_FINAL_TYPE(
-    SewFileRow,
-    sew_file_row,
-    GTK_TYPE_LIST_BOX_ROW
-)
+G_DEFINE_FINAL_TYPE(SewFileRow, sew_file_row, GTK_TYPE_LIST_BOX_ROW)
 
 enum Property {
     PROP_FILE = 1,
@@ -27,7 +23,7 @@ static GParamSpec *obj_properties[N_PROPERITES];
 
 static char const *make_label(SewFileRow *, GFile *file)
 {
-    return file? g_file_get_basename(file) : nullptr;
+    return file ? g_file_get_basename(file) : nullptr;
 }
 
 // GObject /////////////////////////////////////////////////////////////////////

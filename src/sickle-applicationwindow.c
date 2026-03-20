@@ -174,6 +174,7 @@ SickleApplicationWindow *sickle_application_window_new(void)
 void sickle_application_window_open(SickleApplicationWindow *self, GFile *file)
 {
     if (!file) {
+        g_object_set(self, "map", nullptr, nullptr);
         return;
     }
     g_print("Request to open '%s'\n", g_file_get_parse_name(file));

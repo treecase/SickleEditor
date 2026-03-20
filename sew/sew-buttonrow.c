@@ -12,11 +12,7 @@ struct _SewButtonRow {
     gchar *end_icon_name;
 };
 
-G_DEFINE_FINAL_TYPE(
-    SewButtonRow,
-    sew_button_row,
-    GTK_TYPE_LIST_BOX_ROW
-)
+G_DEFINE_FINAL_TYPE(SewButtonRow, sew_button_row, GTK_TYPE_LIST_BOX_ROW)
 
 enum Property {
     PROP_TITLE = 1,
@@ -162,7 +158,10 @@ char const *sew_button_row_get_start_icon_name(SewButtonRow *self)
     return start_icon_name;
 }
 
-void sew_button_row_set_start_icon_name(SewButtonRow *self, char const *start_icon_name)
+void sew_button_row_set_start_icon_name(
+    SewButtonRow *self,
+    char const *start_icon_name
+)
 {
     g_object_set(self, "start-icon-name", start_icon_name, nullptr);
 }
@@ -174,7 +173,8 @@ char const *sew_button_row_get_end_icon_name(SewButtonRow *self)
     return end_icon_name;
 }
 
-void sew_button_row_set_end_icon_name(SewButtonRow *self, char const *end_icon_name)
+void
+sew_button_row_set_end_icon_name(SewButtonRow *self, char const *end_icon_name)
 {
     g_object_set(self, "end-icon-name", end_icon_name, nullptr);
 }
