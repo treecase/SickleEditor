@@ -44,7 +44,9 @@ label.title {
 }
 
 /* Outliner sidebar */
-#outliner {}
+#outliner list {
+    padding: 3px 6px 3px 0px;
+}
 
 /** Preferences Window ************************************/
 #preferences>box {

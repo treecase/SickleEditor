@@ -84,8 +84,13 @@
             <property name="orientation">vertical</property>
             <property name="hexpand">yes</property>
             <child>
-              <object class="GtkLabel">
-                <property name="label">Outliner</property>
+              <object class="GtkScrolledWindow">
+                <property name="vexpand">yes</property>
+                <property name="hscrollbar-policy">never</property>
+                <child>
+                  <object class="GtkListBox" id="outlinerListBox">
+                  </object>
+                </child>
               </object>
             </child>
           </object>

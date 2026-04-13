@@ -3,7 +3,6 @@
 #include "config.h"
 #include "rmf/rmf.h"
 #include "sew/sew.h"
-#include "sickle-application.h"
 
 #include <glib-object.h>
 #include <gtk/gtk.h>
@@ -17,6 +16,7 @@ struct _SickleApplicationWindow {
     unsigned int grid_size;
     // Template widgets
     SewViewport3d *view3D;
+    GtkListBox *outlinerListBox;
 };
 
 G_DEFINE_FINAL_TYPE(
@@ -47,6 +47,103 @@ static void on_notify_application(GObject *object, GParamSpec *, gpointer)
         self->view3D,
         "textures",
         G_BINDING_SYNC_CREATE
+    );
+}
+
+static GtkWidget *create_solid_widget(gpointer item, gpointer store)
+{
+    guint position = 0;
+    g_list_store_find(G_LIST_STORE(store), item, &position);
+    g_autofree char *name = g_strdup_printf("solid.%03u", position + 1);
+    return gtk_label_new(name);
+}
+
+static GtkWidget *create_entity_widget(gpointer item, gpointer)
+{
+    char const *classname
+        = rmf_entity_data_get_classname(RMF_ENTITY_DATA(item));
+
+    GtkWidget *solids = gtk_list_box_new();
+
+    g_autoptr(GListStore) model = g_list_store_new(RMF_TYPE_MAP_OBJECT);
+    g_autoptr(RmfMapObjectIterator) map_objects
+        = rmf_map_object_get_children(RMF_MAP_OBJECT(item));
+    RMF_ITERATOR_FOREACH(RmfMapObject, map_object, map_objects)
+    {
+        if (RMF_IS_SOLID(map_object)) {
+            g_list_store_append(model, map_object);
+        }
+    }
+    gtk_list_box_bind_model(
+        GTK_LIST_BOX(solids),
+        G_LIST_MODEL(model),
+        create_solid_widget,
+        model,
+        nullptr
+    );
+
+    if (g_list_model_get_n_items(G_LIST_MODEL(model)) > 0) {
+        GtkWidget *expander = gtk_expander_new(classname);
+        gtk_expander_set_child(GTK_EXPANDER(expander), solids);
+        return expander;
+    } else {
+        GtkWidget *label = gtk_label_new(classname);
+        gtk_widget_set_halign(label, GTK_ALIGN_START);
+        // FIXME: Arbitrary margin to line up expanderless and expander-having
+        // entity names.
+        gtk_widget_set_margin_start(label, 17);
+        return label;
+    }
+}
+
+static int section_sort_func(void const *a, void const *b, void *)
+{
+    int worldspawn_sort
+        = RMF_IS_WORLDSPAWN((void *)b) - RMF_IS_WORLDSPAWN((void *)a);
+    if (worldspawn_sort != 0) {
+        return worldspawn_sort;
+    }
+    rmf_int a_count = rmf_map_object_get_n_children(RMF_MAP_OBJECT((void *)a));
+    rmf_int b_count = rmf_map_object_get_n_children(RMF_MAP_OBJECT((void *)b));
+    return (b_count > 0) - (a_count > 0);
+}
+
+static void on_notify_map(GObject *object, GParamSpec *, gpointer)
+{
+    SickleApplicationWindow *self = SICKLE_APPLICATION_WINDOW(object);
+    RmfWorldspawn *worldspawn = rmf_root_get_worldspawn(self->map);
+    g_autoptr(GListStore) model = g_list_store_new(RMF_TYPE_MAP_OBJECT);
+    g_autoptr(RmfMapObjectIterator) map_objects
+        = rmf_map_object_get_children(RMF_MAP_OBJECT(worldspawn));
+    g_list_store_append(model, worldspawn);
+    RMF_ITERATOR_FOREACH(RmfMapObject, map_object, map_objects)
+    {
+        if (RMF_IS_ENTITY(map_object)) {
+            g_list_store_append(model, map_object);
+        }
+    }
+
+    GtkExpression *expression = gtk_property_expression_new(
+        RMF_TYPE_ENTITY_DATA,
+        nullptr,
+        "classname"
+    );
+    GtkStringSorter *sorter = gtk_string_sorter_new(expression);
+    GtkCustomSorter *section_sorter
+        = gtk_custom_sorter_new(section_sort_func, nullptr, nullptr);
+    GtkSortListModel *sort_model
+        = gtk_sort_list_model_new(G_LIST_MODEL(model), GTK_SORTER(sorter));
+    gtk_sort_list_model_set_section_sorter(
+        sort_model,
+        GTK_SORTER(section_sorter)
+    );
+
+    gtk_list_box_bind_model(
+        self->outlinerListBox,
+        G_LIST_MODEL(sort_model),
+        create_entity_widget,
+        nullptr,
+        nullptr
     );
 }
 
@@ -145,6 +242,11 @@ sickle_application_window_class_init(SickleApplicationWindowClass *klass)
         SickleApplicationWindow,
         view3D
     );
+    gtk_widget_class_bind_template_child(
+        widget_class,
+        SickleApplicationWindow,
+        outlinerListBox
+    );
 }
 
 static void sickle_application_window_init(SickleApplicationWindow *self)
@@ -156,6 +258,7 @@ static void sickle_application_window_init(SickleApplicationWindow *self)
         G_CALLBACK(on_notify_application),
         nullptr
     );
+    g_signal_connect(self, "notify::map", G_CALLBACK(on_notify_map), nullptr);
 }
 
 // Public //////////////////////////////////////////////////////////////////////
