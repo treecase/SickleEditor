@@ -295,10 +295,13 @@ static void on_map_changed(GObject *object, GParamSpec *, gpointer)
     g_autoptr(GArray) INDICES = g_array_new(FALSE, FALSE, sizeof(GLuint));
 
     RmfWorldspawn *worldspawn = rmf_root_get_worldspawn(self->map);
-    RmfMapObjectIterator *children
+    GListStore *children
         = rmf_map_object_get_children(RMF_MAP_OBJECT(worldspawn));
+    RmfMapObject *child = nullptr;
     GLuint index = 0;
-    RMF_ITERATOR_FOREACH(RmfMapObject, child, children)
+    for (guint i = 0;
+         children && (child = g_list_model_get_item(G_LIST_MODEL(children), i));
+         ++i)
     {
         if (RMF_IS_SOLID(child)) {
             RmfFaceIterator *faces = rmf_solid_get_faces(RMF_SOLID(child));

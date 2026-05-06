@@ -173,9 +173,11 @@ draw_func_brushes(GtkDrawingArea *, cairo_t *cr, int, int, SewViewport2d *self)
 
     auto worldspawn = rmf_root_get_worldspawn(self->map);
 
-    g_autoptr(RmfMapObjectIterator) it
-        = rmf_map_object_get_children(RMF_MAP_OBJECT(worldspawn));
-    RMF_ITERATOR_FOREACH(RmfMapObject, child, it)
+    GListStore *it = rmf_map_object_get_children(RMF_MAP_OBJECT(worldspawn));
+    RmfMapObject *child = nullptr;
+    for (guint i = 0;
+         it && (child = g_list_model_get_item(G_LIST_MODEL(it), i));
+         ++i)
     {
         if (RMF_IS_SOLID(child)) {
             auto color = rmf_map_object_get_color(child);

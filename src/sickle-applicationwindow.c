@@ -66,9 +66,11 @@ static GtkWidget *create_entity_widget(gpointer item, gpointer)
     GtkWidget *solids = gtk_list_box_new();
 
     g_autoptr(GListStore) model = g_list_store_new(RMF_TYPE_MAP_OBJECT);
-    g_autoptr(RmfMapObjectIterator) map_objects
-        = rmf_map_object_get_children(RMF_MAP_OBJECT(item));
-    RMF_ITERATOR_FOREACH(RmfMapObject, map_object, map_objects)
+    GListStore *map_objects = rmf_map_object_get_children(RMF_MAP_OBJECT(item));
+    RmfMapObject *map_object = nullptr;
+    for (guint i = 0; map_objects
+         && (map_object = g_list_model_get_item(G_LIST_MODEL(map_objects), i));
+         ++i)
     {
         if (RMF_IS_SOLID(map_object)) {
             g_list_store_append(model, map_object);
@@ -103,23 +105,36 @@ static int section_sort_func(void const *a, void const *b, void *)
     if (worldspawn_sort != 0) {
         return worldspawn_sort;
     }
-    rmf_int a_count = rmf_map_object_get_n_children(RMF_MAP_OBJECT((void *)a));
-    rmf_int b_count = rmf_map_object_get_n_children(RMF_MAP_OBJECT((void *)b));
+    GListStore *a_children
+        = rmf_map_object_get_children(RMF_MAP_OBJECT((void *)a));
+    GListStore *b_children
+        = rmf_map_object_get_children(RMF_MAP_OBJECT((void *)b));
+    guint a_count
+        = a_children ? g_list_model_get_n_items(G_LIST_MODEL(a_children)) : 0;
+    guint b_count
+        = b_children ? g_list_model_get_n_items(G_LIST_MODEL(b_children)) : 0;
     return (b_count > 0) - (a_count > 0);
 }
 
 static void on_notify_map(GObject *object, GParamSpec *, gpointer)
 {
     SickleApplicationWindow *self = SICKLE_APPLICATION_WINDOW(object);
-    RmfWorldspawn *worldspawn = rmf_root_get_worldspawn(self->map);
     g_autoptr(GListStore) model = g_list_store_new(RMF_TYPE_MAP_OBJECT);
-    g_autoptr(RmfMapObjectIterator) map_objects
-        = rmf_map_object_get_children(RMF_MAP_OBJECT(worldspawn));
-    g_list_store_append(model, worldspawn);
-    RMF_ITERATOR_FOREACH(RmfMapObject, map_object, map_objects)
-    {
-        if (RMF_IS_ENTITY(map_object)) {
-            g_list_store_append(model, map_object);
+
+    if (self->map) {
+        RmfWorldspawn *worldspawn = rmf_root_get_worldspawn(self->map);
+        GListStore *map_objects
+            = rmf_map_object_get_children(RMF_MAP_OBJECT(worldspawn));
+        RmfMapObject *map_object = nullptr;
+        g_list_store_append(model, worldspawn);
+        for (guint i = 0; map_objects
+             && (map_object
+                 = g_list_model_get_item(G_LIST_MODEL(map_objects), i));
+             ++i)
+        {
+            if (RMF_IS_ENTITY(map_object)) {
+                g_list_store_append(model, map_object);
+            }
         }
     }
 
@@ -274,10 +289,14 @@ SickleApplicationWindow *sickle_application_window_new(void)
     );
 }
 
+void sickle_application_window_open_blank(SickleApplicationWindow *self)
+{
+    g_object_set(self, "map", nullptr, nullptr);
+}
+
 void sickle_application_window_open(SickleApplicationWindow *self, GFile *file)
 {
     if (!file) {
-        g_object_set(self, "map", nullptr, nullptr);
         return;
     }
     g_print("Request to open '%s'\n", g_file_get_parse_name(file));

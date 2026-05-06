@@ -16,6 +16,8 @@ G_DECLARE_FINAL_TYPE(
 
 SickleApplicationWindow *sickle_application_window_new(void);
 
+void sickle_application_window_open_blank(SickleApplicationWindow *self);
+
 /** Open a file. */
 void
 sickle_application_window_open(SickleApplicationWindow *window, GFile *file);

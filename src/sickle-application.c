@@ -112,7 +112,7 @@ static void action_new(GSimpleAction *, GVariant *, gpointer user_data)
 {
     GtkWindow *window
         = gtk_application_get_active_window(GTK_APPLICATION(user_data));
-    sickle_application_window_open(SICKLE_APPLICATION_WINDOW(window), nullptr);
+    sickle_application_window_open_blank(SICKLE_APPLICATION_WINDOW(window));
 }
 
 static void action_open(GSimpleAction *, GVariant *, gpointer user_data)
